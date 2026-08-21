@@ -1,0 +1,139 @@
+# glaux-console work queue — the source of truth for the daily implementation loop.
+#
+# Each daily run picks the next 3-5 entries with status: pending, implements them,
+# opens one PR, and flips them to done IN THAT PR. Never edit an entry's status
+# outside the PR that does the work.
+#
+#   status: pending | in_progress | done
+#   tier:   structural  - repo/shell/infrastructure work, not a service
+#           deep        - hand-built screen (see the spec's "Hand-built screens")
+#           generic     - nav entry, icon, list-column overrides, smoke test on top
+#                         of the generated catalog layer
+#
+# Services not listed here still work through the generic catalog layer once the
+# structural run lands; listing one only means it gets deliberate attention.
+# Run 1 appends every service reported by the target's /_fakecloud/health that is
+# missing from this file, as tier: generic, status: pending.
+
+queue:
+  - id: scaffold
+    tier: structural
+    status: pending
+    notes: >
+      Vite + React + TypeScript + Cloudscape app shell (AppLayout, TopNavigation,
+      collapsible service nav, breadcrumbs), repo tooling (eslint, prettier,
+      vitest, playwright), CI gate (typecheck, lint, test, build), LICENSE
+      (Apache-2.0), README. No AWS logos or wordmarks anywhere.
+
+  - id: endpoint-switcher
+    tier: structural
+    status: pending
+    notes: >
+      Endpoint model + switcher UI; default target is the origin serving the
+      console. Backend proxy path (browser -> console backend -> emulator) with
+      dummy SigV4 credentials. Refuse *.amazonaws.com and other real-AWS hosts
+      with an explicit message. Capability discovery via /_fakecloud/health,
+      cached per endpoint; unimplemented services render greyed out.
+
+  - id: catalog-codegen
+    tier: structural
+    status: pending
+    notes: >
+      Build-time generation of the service catalog from AWS public Smithy/botocore
+      models: operations, input/output shapes, enums, docs, pagination fields,
+      list/describe/create/update/delete classification. Lazy per-service chunks.
+      Snapshot tests so regeneration cannot silently change forms.
+
+  - id: generic-layer
+    tier: structural
+    status: pending
+    notes: >
+      Resources tab (list/describe -> Cloudscape tables, inferred columns, real
+      pagination) and Actions tab (generated forms, enums as selects, nested
+      structures, blob file pickers, raw-JSON escape hatch). "View as CLI" on
+      every form. Destructive actions require typing the resource name.
+
+  - id: athena
+    tier: deep
+    status: pending
+    notes: >
+      The flagship screen. Ace CodeEditor, Glue-backed schema tree, run/cancel,
+      results table with pagination, bytes scanned + timing, query history, saved
+      queries. Render glaux's explicit unsupported-construct errors as first-class
+      explanations linking to the SQL coverage table.
+
+  - id: glue
+    tier: deep
+    status: pending
+    notes: >
+      Database/table browser: columns, partitions, SerDe, partition projection.
+      "Query this table" prefills the Athena editor.
+
+  - id: firehose
+    tier: deep
+    status: pending
+    notes: >
+      Delivery streams, buffering config, live delivery activity (objects written,
+      error-prefix records), "put test records", links to produced S3 objects.
+
+  - id: s3
+    tier: deep
+    status: pending
+    notes: >
+      Bucket/prefix browser, object upload/download/delete, metadata view.
+      Parquet preview is a follow-up, not part of this entry.
+
+  - id: sqs
+    tier: deep
+    status: pending
+    notes: Queue list, attributes, peek without consuming, send, purge, DLQ view.
+
+  - id: eventbridge
+    tier: deep
+    status: pending
+    notes: Buses, rules, targets, and an event-pattern tester against sample events.
+
+  - id: dynamodb
+    tier: deep
+    status: pending
+    notes: Tables, indexes, item browser/editor, query and scan with expression inputs.
+
+  - id: lambda
+    tier: generic
+    status: pending
+    notes: Functions list, config, invoke with payload, recorded invocations via introspection.
+
+  - id: stepfunctions
+    tier: generic
+    status: pending
+    notes: State machines, executions, execution history.
+
+  - id: kinesis
+    tier: generic
+    status: pending
+    notes: Streams, shards, put/get records.
+
+  - id: secretsmanager
+    tier: generic
+    status: pending
+
+  - id: ssm
+    tier: generic
+    status: pending
+
+  - id: iam
+    tier: generic
+    status: pending
+
+  - id: sns
+    tier: generic
+    status: pending
+
+  - id: logs
+    tier: generic
+    status: pending
+    notes: CloudWatch Logs — log groups, streams, tail view.
+
+  - id: kms
+    tier: generic
+    status: pending
