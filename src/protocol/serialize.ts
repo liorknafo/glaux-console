@@ -83,9 +83,16 @@ function serializeRest(
       case 'querystring':
         query[wireName] = toQueryValue(catalog, ref, value);
         break;
-      case 'header':
-        headers[wireName.toLowerCase()] = String(value);
+      case 'header': {
+        // Modelled header timestamps default to rfc822; String(Date) would send
+        // a locale string the target rejects.
+        const headerShape = mergeRef(ref, resolveShape(catalog, ref));
+        headers[wireName.toLowerCase()] =
+          headerShape.type === 'timestamp'
+            ? formatTimestamp(value, ref.timestampFormat ?? headerShape.timestampFormat ?? 'rfc822')
+            : String(value);
         break;
+      }
       case 'headers':
         for (const [key, headerValue] of Object.entries(value as Record<string, string>)) {
           headers[`${wireName}${key}`.toLowerCase()] = String(headerValue);

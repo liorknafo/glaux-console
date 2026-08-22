@@ -43,6 +43,7 @@ describe('json responses', () => {
           body: JSON.stringify({ __type: 'QueueDoesNotExist', message: 'nope' }),
         }),
       );
+      expect.unreachable('parseResponse should have thrown');
     } catch (error) {
       expect((error as ServiceCallError).code).toBe('QueueDoesNotExist');
       expect((error as ServiceCallError).status).toBe(400);
@@ -142,6 +143,32 @@ describe('xml responses', () => {
   });
 });
 
+describe('rest-json member mapping', () => {
+  it('maps wire keys back to their modelled member names', async () => {
+    const apigateway = await loadServiceCatalog('apigateway');
+    const output = parseResponse(
+      apigateway,
+      apigateway.operations.GetRestApis,
+      // The model names this member `items`, but declares locationName `item`.
+      response({ body: JSON.stringify({ item: [{ id: 'abc', name: 'demo' }] }) }),
+    ) as Record<string, unknown>;
+
+    expect(output.items).toEqual([{ id: 'abc', name: 'demo' }]);
+  });
+
+  it('keeps fields the model does not describe rather than dropping them', async () => {
+    const sqs = await loadServiceCatalog('sqs');
+    const output = parseResponse(
+      sqs,
+      sqs.operations.ListQueues,
+      response({ body: JSON.stringify({ QueueUrls: ['a'], SomethingNew: 1 }) }),
+    ) as Record<string, unknown>;
+
+    expect(output.QueueUrls).toEqual(['a']);
+    expect(output.SomethingNew).toBe(1);
+  });
+});
+
 describe('header-located output members', () => {
   it('merges headers into the parsed output', async () => {
     const s3 = await loadServiceCatalog('s3');
@@ -152,6 +179,26 @@ describe('header-located output members', () => {
     ) as Record<string, unknown>;
     expect(output.ContentType).toBe('application/parquet');
     expect(output.ETag).toBe('"abc"');
+  });
+
+  it('decodes a string payload but leaves a blob payload encoded', async () => {
+    const s3 = await loadServiceCatalog('s3');
+    const policy = '{"Statement":[]}';
+    const stringPayload = parseResponse(
+      s3,
+      s3.operations.GetBucketPolicy,
+      response({ body: btoa(policy), bodyEncoding: 'base64' }),
+    ) as Record<string, unknown>;
+    expect(stringPayload.Policy).toBe(policy);
+
+    // A blob is binary; it stays as the backend encoded it.
+    const lambda = await loadServiceCatalog('lambda');
+    const blobPayload = parseResponse(
+      lambda,
+      lambda.operations.Invoke,
+      response({ body: btoa(policy), bodyEncoding: 'base64' }),
+    ) as Record<string, unknown>;
+    expect(blobPayload.Payload).toBe(btoa(policy));
   });
 });
 

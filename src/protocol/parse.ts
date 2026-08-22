@@ -22,24 +22,49 @@ export function parseResponse(
   switch (catalog.metadata.protocol) {
     case 'json':
     case 'rest-json': {
-      const parsed = text.trim() ? safeJsonParse(text) : {};
-      return mergeHeaderMembers(catalog, operation, response, parsed);
+      const raw = text.trim() ? safeJsonParse(text) : {};
+      // The wire uses `locationName` where the model declares one, so the keys
+      // coming back are not always the modelled member names the UI reads by.
+      const parsed = operation.output ? fromJson(catalog, { shape: operation.output }, raw) : raw;
+      return mergeHeaderMembers(catalog, operation, response, parsed, text);
     }
     case 'query':
     case 'ec2':
     case 'rest-xml': {
+      // An operation whose output payload is a raw string or blob does not
+      // return XML at all — S3's GetBucketPolicy returns JSON and GetObject
+      // returns the object itself. Parsing those as XML throws.
+      if (hasRawPayload(catalog, operation)) {
+        return mergeHeaderMembers(catalog, operation, response, {}, text);
+      }
       const root = text.trim() ? parseXmlDocument(text) : undefined;
-      if (!root) return mergeHeaderMembers(catalog, operation, response, {});
+      if (!root) return mergeHeaderMembers(catalog, operation, response, {}, text);
       const payload = unwrapResult(root, operation);
       const outputRef: ShapeRef | undefined = operation.output
         ? { shape: operation.output }
         : undefined;
       const parsed = outputRef ? fromXml(catalog, outputRef, payload) : xmlToPlain(payload);
-      return mergeHeaderMembers(catalog, operation, response, parsed as Record<string, unknown>);
+      return mergeHeaderMembers(
+        catalog,
+        operation,
+        response,
+        parsed as Record<string, unknown>,
+        text,
+      );
     }
     default:
       return safeJsonParse(text);
   }
+}
+
+/** True when the operation's output body is the payload member verbatim. */
+function hasRawPayload(catalog: ServiceCatalog, operation: Operation): boolean {
+  const outputShape = operation.output ? catalog.shapes[operation.output] : undefined;
+  const payload = outputShape?.payload;
+  if (!payload) return false;
+  const ref = outputShape?.members?.[payload];
+  const shape = ref?.shape ? catalog.shapes[ref.shape] : undefined;
+  return shape?.type === 'blob' || shape?.type === 'string';
 }
 
 /** `<OpResponse><OpResult>…</OpResult></OpResponse>` -> the result element. */
@@ -53,6 +78,7 @@ function mergeHeaderMembers(
   operation: Operation,
   response: WireResponse,
   parsed: unknown,
+  text: string,
 ): unknown {
   const outputShape = operation.output ? catalog.shapes[operation.output] : undefined;
   if (!outputShape?.members || typeof parsed !== 'object' || parsed === null) return parsed;
@@ -66,11 +92,61 @@ function mergeHeaderMembers(
     } else if (outputShape.payload === name && ref.shape) {
       const payloadShape = catalog.shapes[ref.shape];
       if (payloadShape && (payloadShape.type === 'blob' || payloadShape.type === 'string')) {
-        out[name] = response.bodyEncoding === 'base64' ? response.body : response.body;
+        // A blob payload stays as the backend encoded it; a string payload is
+        // the decoded text, never the base64 the transport happened to use.
+        out[name] = payloadShape.type === 'blob' ? response.body : text;
       }
     }
   }
   return out;
+}
+
+/* ------------------------------------------------------------------ json */
+
+/**
+ * Walks a JSON body against the output shape, mapping wire keys back to their
+ * modelled member names. `rest-json` services such as API Gateway and Amazon MQ
+ * declare `locationName` on output members, so returning the raw keys would
+ * leave those fields reading as undefined everywhere in the UI.
+ */
+function fromJson(catalog: ServiceCatalog, ref: ShapeRef, value: unknown): unknown {
+  if (value === undefined || value === null) return value;
+  const shape = mergeRef(ref, resolveShape(catalog, ref));
+
+  switch (shape.type) {
+    case 'structure': {
+      if (shape.document || typeof value !== 'object' || Array.isArray(value)) return value;
+      const source = value as Record<string, unknown>;
+      const out: Record<string, unknown> = {};
+      const claimed = new Set<string>();
+      for (const [name, member] of Object.entries(shape.members ?? {})) {
+        if (member.location === 'header' || member.location === 'statusCode') continue;
+        const wireName = member.locationName ?? name;
+        if (!(wireName in source)) continue;
+        claimed.add(wireName);
+        out[name] = fromJson(catalog, member, source[wireName]);
+      }
+      // Anything the model does not describe is still shown rather than dropped.
+      for (const [key, entry] of Object.entries(source)) {
+        if (!claimed.has(key) && !(key in out)) out[key] = entry;
+      }
+      return out;
+    }
+    case 'list':
+      return Array.isArray(value)
+        ? value.map(item => fromJson(catalog, shape.member ?? {}, item))
+        : value;
+    case 'map': {
+      if (typeof value !== 'object' || Array.isArray(value)) return value;
+      const out: Record<string, unknown> = {};
+      for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+        out[key] = fromJson(catalog, shape.value ?? {}, entry);
+      }
+      return out;
+    }
+    default:
+      return value;
+  }
 }
 
 /* ------------------------------------------------------------------- xml */

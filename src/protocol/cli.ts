@@ -28,7 +28,11 @@ export function renderCliCommand(
   return parts.join(' \\\n  ');
 }
 
-/** The CLI's command name is not always the catalog id (`events` -> `events`). */
+/**
+ * Every catalogued service id is currently also its `aws` CLI command name.
+ * This stays a function so an exception can be added in one place if a future
+ * service needs one.
+ */
 function cliServiceName(catalog: ServiceCatalog): string {
   return catalog.id;
 }
