@@ -39,6 +39,9 @@ describe('endpoint validation', () => {
       'http://169.254.169.254/latest/meta-data/',
       'http://169.254.170.2/v2/credentials',
       'http://metadata.google.internal/',
+      'http://[fd00:ec2::254]/latest/meta-data/',
+      'http://instance-data/',
+      'http://100.100.100.200/latest/meta-data/',
     ]) {
       const result = checkEndpointUrl(url);
       expect(result.ok, url).toBe(false);

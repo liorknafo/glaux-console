@@ -10,7 +10,7 @@ import Header from '@cloudscape-design/components/header';
 import Input from '@cloudscape-design/components/input';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Table from '@cloudscape-design/components/table';
-import { useEndpoints } from '../endpoints/EndpointContext';
+import { useEndpoints } from '../endpoints/context';
 import { newEndpointId, type EndpointConfig } from '../endpoints/store';
 import { checkEndpointUrl, isLikelyLocal, REAL_AWS_SUFFIXES } from '../endpoints/validation';
 

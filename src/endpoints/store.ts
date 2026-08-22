@@ -43,14 +43,32 @@ export function loadEndpoints(origin: string): EndpointConfig[] {
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as EndpointConfig[];
     if (!Array.isArray(parsed) || parsed.length === 0) return fallback;
-    return parsed.filter(entry => typeof entry?.url === 'string' && typeof entry?.id === 'string');
+    const valid = parsed.filter(
+      entry =>
+        typeof entry?.id === 'string' &&
+        typeof entry?.name === 'string' &&
+        typeof entry?.url === 'string' &&
+        typeof entry?.region === 'string',
+    );
+    // A partially-written record would serialize an undefined region into every
+    // signed request, so an all-invalid list falls back rather than emptying.
+    return valid.length > 0 ? valid : fallback;
   } catch {
     return fallback;
   }
 }
 
+/** `setItem` throws on quota and on browser storage policies, not just access. */
+function writeStorage(key: string, value: string): void {
+  try {
+    readStorage()?.setItem(key, value);
+  } catch {
+    // Persistence is unavailable; the in-memory endpoint list still works.
+  }
+}
+
 export function saveEndpoints(endpoints: EndpointConfig[]): void {
-  readStorage()?.setItem(STORAGE_KEY, JSON.stringify(endpoints));
+  writeStorage(STORAGE_KEY, JSON.stringify(endpoints));
 }
 
 export function loadActiveEndpointId(): string | undefined {
@@ -58,7 +76,7 @@ export function loadActiveEndpointId(): string | undefined {
 }
 
 export function saveActiveEndpointId(id: string): void {
-  readStorage()?.setItem(ACTIVE_KEY, id);
+  writeStorage(ACTIVE_KEY, id);
 }
 
 export function newEndpointId(): string {

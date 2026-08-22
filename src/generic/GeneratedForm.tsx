@@ -13,6 +13,7 @@ import type { Operation, ServiceCatalog, Shape, ShapeRef } from '../catalog/type
 import { mergeRef, resolveShape } from '../catalog/types';
 import { inputMembers } from '../protocol/serialize';
 import { humanize } from './columns';
+import { fileToBase64 } from './files';
 
 /**
  * The Actions tab's form generator.
@@ -277,59 +278,88 @@ function ListField({ catalog, name, shape, value, onChange, depth, disabled }: F
 
 function MapField({ catalog, shape, value, onChange, depth, disabled }: FieldProps) {
   const record = (value ?? {}) as Record<string, unknown>;
-  const entries = Object.entries(record);
   const valueRef = shape.value ?? {};
   const valueShape = mergeRef(valueRef, resolveShape(catalog, valueRef));
 
-  const replace = (index: number, key: string, entryValue: unknown) => {
-    const next: Record<string, unknown> = {};
-    entries.forEach(([existingKey, existingValue], i) => {
-      if (i === index) next[key] = entryValue;
-      else next[existingKey] = existingValue;
-    });
-    onChange(next);
+  // The request payload is an object, but an object cannot hold two rows that
+  // momentarily share a key — including the empty key a new row starts with.
+  // Row order and in-progress duplicates live here; the object is rebuilt on
+  // every change, so a collision is reported instead of silently eating a row.
+  const [pairs, setPairs] = useState<[string, unknown][]>(() => Object.entries(record));
+  const [seed, setSeed] = useState(() => JSON.stringify(record));
+
+  // Re-seed when the payload is replaced from outside: another operation
+  // selected, or the raw-JSON editor rewriting the request.
+  const external = JSON.stringify(record);
+  if (seed !== external) {
+    setSeed(external);
+    if (external !== JSON.stringify(Object.fromEntries(pairs))) {
+      setPairs(Object.entries(record));
+    }
+  }
+
+  const commit = (next: [string, unknown][]) => {
+    setPairs(next);
+    setSeed(JSON.stringify(Object.fromEntries(next)));
+    onChange(Object.fromEntries(next));
   };
 
+  const duplicates = pairs.length !== new Set(pairs.map(([key]) => key)).size;
+
   return (
-    <AttributeEditor
-      items={entries.map(([key, entryValue], index) => ({ key, entryValue, index }))}
-      addButtonText="Add entry"
-      removeButtonText="Remove"
-      empty="No entries"
-      disableAddButton={disabled}
-      definition={[
-        {
-          label: 'Key',
-          control: (row: { key: string; entryValue: unknown; index: number }) => (
-            <Input
-              value={row.key}
-              disabled={disabled}
-              onChange={event => replace(row.index, event.detail.value, row.entryValue)}
-            />
-          ),
-        },
-        {
-          label: 'Value',
-          control: (row: { key: string; entryValue: unknown; index: number }) => (
-            <Field
-              catalog={catalog}
-              name="value"
-              ref_={valueRef}
-              shape={valueShape}
-              depth={depth + 1}
-              disabled={disabled}
-              hideLabel
-              value={row.entryValue}
-              onChange={next => replace(row.index, row.key, next)}
-            />
-          ),
-        },
-      ]}
-      onAddButtonClick={() => onChange({ ...record, '': defaultValueFor(valueShape) })}
-      onRemoveButtonClick={event =>
-        onChange(Object.fromEntries(entries.filter((_, i) => i !== event.detail.itemIndex)))
-      }
-    />
+    <SpaceBetween size="xxs">
+      <AttributeEditor
+        items={pairs.map(([key, entryValue], index) => ({ key, entryValue, index }))}
+        addButtonText="Add entry"
+        removeButtonText="Remove"
+        empty="No entries"
+        disableAddButton={disabled}
+        definition={[
+          {
+            label: 'Key',
+            control: (row: { key: string; entryValue: unknown; index: number }) => (
+              <Input
+                value={row.key}
+                disabled={disabled}
+                invalid={row.key !== '' && pairs.filter(([key]) => key === row.key).length > 1}
+                onChange={event =>
+                  commit(
+                    pairs.map((pair, i) =>
+                      i === row.index ? [event.detail.value, pair[1]] : pair,
+                    ),
+                  )
+                }
+              />
+            ),
+          },
+          {
+            label: 'Value',
+            control: (row: { key: string; entryValue: unknown; index: number }) => (
+              <Field
+                catalog={catalog}
+                name="value"
+                ref_={valueRef}
+                shape={valueShape}
+                depth={depth + 1}
+                disabled={disabled}
+                hideLabel
+                value={row.entryValue}
+                onChange={next =>
+                  commit(pairs.map((pair, i) => (i === row.index ? [pair[0], next] : pair)))
+                }
+              />
+            ),
+          },
+        ]}
+        onAddButtonClick={() => commit([...pairs, ['', defaultValueFor(valueShape)]])}
+        onRemoveButtonClick={event => commit(pairs.filter((_, i) => i !== event.detail.itemIndex))}
+      />
+      {duplicates && (
+        <Box color="text-status-error" fontSize="body-s" data-testid="map-duplicate-keys">
+          Duplicate keys — only the last entry for each key is sent.
+        </Box>
+      )}
+    </SpaceBetween>
   );
 }
 
@@ -337,24 +367,28 @@ function BlobField({ value, onChange, disabled }: FieldProps) {
   const [files, setFiles] = useState<File[]>([]);
   return (
     <SpaceBetween size="xs">
-      <FileUpload
-        value={files}
-        onChange={async event => {
-          setFiles(event.detail.value);
-          const file = event.detail.value[0];
-          onChange(file ? await fileToBase64(file) : undefined);
-        }}
-        i18nStrings={{
-          uploadButtonText: multiple => (multiple ? 'Choose files' : 'Choose file'),
-          dropzoneText: multiple => (multiple ? 'Drop files to upload' : 'Drop file to upload'),
-          removeFileAriaLabel: index => `Remove file ${index + 1}`,
-          limitShowFewer: 'Show fewer files',
-          limitShowMore: 'Show more files',
-          errorIconAriaLabel: 'Error',
-        }}
-        showFileSize
-        constraintText="Sent base64-encoded."
-      />
+      {/* Cloudscape's FileUpload takes no `disabled` prop, so it is withheld
+          while an operation runs rather than left able to mutate the input. */}
+      {!disabled && (
+        <FileUpload
+          value={files}
+          onChange={async event => {
+            setFiles(event.detail.value);
+            const file = event.detail.value[0];
+            onChange(file ? await fileToBase64(file) : undefined);
+          }}
+          i18nStrings={{
+            uploadButtonText: multiple => (multiple ? 'Choose files' : 'Choose file'),
+            dropzoneText: multiple => (multiple ? 'Drop files to upload' : 'Drop file to upload'),
+            removeFileAriaLabel: index => `Remove file ${index + 1}`,
+            limitShowFewer: 'Show fewer files',
+            limitShowMore: 'Show more files',
+            errorIconAriaLabel: 'Error',
+          }}
+          showFileSize
+          constraintText="Sent base64-encoded."
+        />
+      )}
       <Textarea
         value={typeof value === 'string' ? value : ''}
         disabled={disabled}
@@ -481,16 +515,4 @@ function toNumber(value: string): number | string {
   if (value.trim() === '') return '';
   const parsed = Number(value);
   return Number.isNaN(parsed) ? value : parsed;
-}
-
-export function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(reader.error);
-    reader.onload = () => {
-      const result = String(reader.result);
-      resolve(result.slice(result.indexOf(',') + 1));
-    };
-    reader.readAsDataURL(file);
-  });
 }

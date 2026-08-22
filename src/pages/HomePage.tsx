@@ -13,7 +13,7 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Spinner from '@cloudscape-design/components/spinner';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import { serviceIndex } from '../catalog/loader';
-import { useEndpoints } from '../endpoints/EndpointContext';
+import { useEndpoints } from '../endpoints/context';
 
 /** Landing screen: target status, and every catalogued service as a card. */
 export function HomePage() {

@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { loadServiceCatalog } from '../catalog/loader';
 import type { Operation, ServiceCatalog } from '../catalog/types';
 import { GeneratedForm } from './GeneratedForm';
-import { destructiveIdentifier } from './DestructiveConfirm';
+import { destructiveIdentifier } from './destructive';
 
 /**
  * The generated form is the floor for every service, so these tests pin the
@@ -78,6 +78,38 @@ describe('GeneratedForm', () => {
     await user.click(screen.getByText(/Optional parameters/));
     expect((await screen.findAllByText('Choose file')).length).toBeGreaterThan(0);
     expect(screen.getByPlaceholderText('…or paste base64 directly')).toBeInTheDocument();
+  });
+
+  it('edits list members as repeatable rows', async () => {
+    const user = userEvent.setup();
+    const iam = await loadServiceCatalog('iam');
+    render(<Harness catalog={iam} operation={iam.operations.TagUser} />);
+
+    // Tags is a required list of structures, so its editor renders up front.
+    const add = await screen.findByRole('button', { name: /Add tags item/i });
+    await user.click(add);
+    await user.click(add);
+
+    await waitFor(() =>
+      expect(JSON.parse(screen.getByTestId('value').textContent!).Tags).toHaveLength(2),
+    );
+  });
+
+  it('reports duplicate map keys instead of silently dropping an entry', async () => {
+    const user = userEvent.setup();
+    const sqs = await loadServiceCatalog('sqs');
+    render(<Harness catalog={sqs} operation={sqs.operations.CreateQueue} />);
+
+    await user.click(screen.getByText(/Optional parameters/));
+    const addButtons = await screen.findAllByRole('button', { name: /Add entry/i });
+    await user.click(addButtons[0]);
+    await user.click(addButtons[0]);
+
+    // Two rows both start on the empty key, which one object cannot hold.
+    expect(await screen.findByTestId('map-duplicate-keys')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(JSON.parse(screen.getByTestId('value').textContent!)).toHaveProperty('Attributes'),
+    );
   });
 
   it('says so plainly when an operation takes no input', async () => {

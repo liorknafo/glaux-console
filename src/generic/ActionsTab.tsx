@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Alert from '@cloudscape-design/components/alert';
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
@@ -12,8 +12,9 @@ import Textarea from '@cloudscape-design/components/textarea';
 import Toggle from '@cloudscape-design/components/toggle';
 import type { Operation, ServiceCatalog } from '../catalog/types';
 import { callOperation, describeError, type CallResult } from '../api/client';
-import { useEndpoints } from '../endpoints/EndpointContext';
-import { DestructiveConfirm, destructiveIdentifier } from './DestructiveConfirm';
+import { useEndpoints } from '../endpoints/context';
+import { DestructiveConfirm } from './DestructiveConfirm';
+import { destructiveIdentifier } from './destructive';
 import { GeneratedForm } from './GeneratedForm';
 import { OperationResult } from './OperationResult';
 import { ViewAsCli } from './ViewAsCli';
@@ -49,6 +50,7 @@ export function ActionsTab({ catalog }: { catalog: ServiceCatalog }) {
       label: group.label,
       options: Object.values(catalog.operations)
         .filter(operation => group.classifications.includes(operation.classification))
+        .sort((a, b) => a.name.localeCompare(b.name))
         .map(operation => ({
           label: operation.name,
           value: operation.name,
@@ -57,9 +59,9 @@ export function ActionsTab({ catalog }: { catalog: ServiceCatalog }) {
     })).filter(group => group.options.length > 0);
 
     if (!showReads) return groups;
-    const reads = Object.values(catalog.operations).filter(operation =>
-      ['list', 'describe'].includes(operation.classification),
-    );
+    const reads = Object.values(catalog.operations)
+      .filter(operation => ['list', 'describe'].includes(operation.classification))
+      .sort((a, b) => a.name.localeCompare(b.name));
     return [
       ...groups,
       {
@@ -75,28 +77,42 @@ export function ActionsTab({ catalog }: { catalog: ServiceCatalog }) {
 
   const operation = selectedName ? catalog.operations[selectedName] : undefined;
   const destructive = operation?.classification === 'delete';
+  // While the JSON editor holds text that does not parse, `input` still carries
+  // the last payload that did. Running would send something other than what the
+  // user is looking at.
+  const blockedByRawError = rawJson && rawError !== undefined;
+
+  // A response from a previously-selected operation must not land on the
+  // operation now on screen.
+  const requestSequence = useRef(0);
 
   function selectOperation(name: string) {
+    requestSequence.current += 1;
     setSelectedName(name);
     setInput({});
     setRawText('{}');
     setRawError(undefined);
     setResult(undefined);
     setError(undefined);
+    setRunning(false);
   }
 
   async function run() {
-    if (!operation) return;
+    if (!operation || blockedByRawError) return;
+    requestSequence.current += 1;
+    const sequence = requestSequence.current;
+    const current = () => requestSequence.current === sequence;
     setConfirming(false);
     setRunning(true);
     setError(undefined);
     setResult(undefined);
     try {
-      setResult(await callOperation(active, catalog, operation, input));
+      const result = await callOperation(active, catalog, operation, input);
+      if (current()) setResult(result);
     } catch (caught) {
-      setError(describeError(caught));
+      if (current()) setError(describeError(caught));
     } finally {
-      setRunning(false);
+      if (current()) setRunning(false);
     }
   }
 
@@ -135,6 +151,7 @@ export function ActionsTab({ catalog }: { catalog: ServiceCatalog }) {
               <Button
                 variant="primary"
                 loading={running}
+                disabled={blockedByRawError}
                 data-testid="run-operation"
                 onClick={() => (destructive ? setConfirming(true) : run())}
               >

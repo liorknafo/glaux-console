@@ -57,6 +57,16 @@ export async function discoverCapabilities(
     return { state: 'unknown', reason: `${HEALTH_PATH} did not return JSON.` };
   }
 
+  // An explicit `services: []` means "this target runs nothing"; a body with no
+  // `services` field at all means we simply do not know, and reporting it as
+  // known would grey out every service in the console.
+  if (typeof body !== 'object' || body === null || !('services' in body)) {
+    return {
+      state: 'unknown',
+      reason: `${HEALTH_PATH} answered without a "services" field.`,
+    };
+  }
+
   return { state: 'known', report: toReport(body) };
 }
 

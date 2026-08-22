@@ -9,7 +9,7 @@ import Spinner from '@cloudscape-design/components/spinner';
 import Tabs from '@cloudscape-design/components/tabs';
 import { findService, loadServiceCatalog } from '../catalog/loader';
 import type { ServiceCatalog } from '../catalog/types';
-import { useEndpoints } from '../endpoints/EndpointContext';
+import { useEndpoints } from '../endpoints/context';
 import { ActionsTab } from '../generic/ActionsTab';
 import { ResourcesTab } from '../generic/ResourcesTab';
 

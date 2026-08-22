@@ -5,7 +5,7 @@ import SideNavigation, {
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMemo } from 'react';
 import { servicesByCategory } from '../catalog/loader';
-import { useEndpoints } from '../endpoints/EndpointContext';
+import { useEndpoints } from '../endpoints/context';
 
 /**
  * Service navigation, grouped by category like the console's own.
@@ -56,7 +56,15 @@ export function Navigation() {
       activeHref={`#${location.pathname}`}
       items={items}
       onFollow={event => {
-        if (event.detail.external || !event.detail.href.startsWith('#/')) return;
+        if (event.detail.external) return;
+        // Category headings carry a `#category-…` href purely so Cloudscape
+        // renders them as a group. Letting that through would match the
+        // wildcard route and drop the user on Home; Cloudscape still expands
+        // the group after the follow is prevented.
+        if (!event.detail.href.startsWith('#/')) {
+          event.preventDefault();
+          return;
+        }
         event.preventDefault();
         navigate(event.detail.href.slice(1));
       }}

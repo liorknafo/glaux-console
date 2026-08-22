@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Alert from '@cloudscape-design/components/alert';
 import Box from '@cloudscape-design/components/box';
 import Button from '@cloudscape-design/components/button';
@@ -12,7 +12,7 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Table from '@cloudscape-design/components/table';
 import type { Operation, ServiceCatalog } from '../catalog/types';
 import { callOperation, describeError } from '../api/client';
-import { useEndpoints } from '../endpoints/EndpointContext';
+import { useEndpoints } from '../endpoints/context';
 import { GeneratedForm } from './GeneratedForm';
 import { inferResultShape, readCollection, renderCell, type ResultShape } from './columns';
 import { OperationResult } from './OperationResult';
@@ -58,17 +58,27 @@ export function ResourcesTab({ catalog }: { catalog: ServiceCatalog }) {
     [catalog, operation],
   );
 
+  // Selecting another operation clears the result but cannot cancel a request
+  // already in flight; without this guard its late response would land on the
+  // newly-selected operation's screen.
+  const requestSequence = useRef(0);
+
   function selectOperation(name: string) {
+    requestSequence.current += 1;
     setSelectedName(name);
     setInput({});
     setPages([]);
     setPageIndex(0);
     setError(undefined);
     setLastRaw(undefined);
+    setLoading(false);
   }
 
   async function fetchPage(token: string | undefined, replace: boolean) {
     if (!operation) return;
+    requestSequence.current += 1;
+    const sequence = requestSequence.current;
+    const current = () => requestSequence.current === sequence;
     setLoading(true);
     setError(undefined);
     const pagination = operation.pagination;
@@ -77,18 +87,20 @@ export function ResourcesTab({ catalog }: { catalog: ServiceCatalog }) {
 
     try {
       const result = await callOperation(active, catalog, operation, request);
+      if (!current()) return;
       setLastRaw({ output: result.output, status: result.status, durationMs: result.durationMs });
       const items = resultShape ? readCollection(result.output, resultShape.path) : [];
       const nextToken = pagination?.outputToken
         ? readToken(result.output, pagination.outputToken)
         : undefined;
       const page: Page = { items, token: nextToken };
-      setPages(current => (replace ? [page] : [...current, page]));
-      setPageIndex(current => (replace ? 0 : current + 1));
+      setPages(existing => (replace ? [page] : [...existing, page]));
+      setPageIndex(existing => (replace ? 0 : existing + 1));
     } catch (caught) {
+      if (!current()) return;
       setError(describeError(caught));
     } finally {
-      setLoading(false);
+      if (current()) setLoading(false);
     }
   }
 
@@ -172,7 +184,6 @@ export function ResourcesTab({ catalog }: { catalog: ServiceCatalog }) {
             id: column.id,
             header: column.header,
             cell: (item: unknown) => renderCell(readField(item, column.id)),
-            sortingField: column.scalar ? column.id : undefined,
           }))}
           items={currentPage?.items ?? []}
           empty={

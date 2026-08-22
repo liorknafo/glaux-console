@@ -1,13 +1,6 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { discoverCapabilities, type Capabilities } from '../api/health';
+import { EndpointContext } from './context';
 import {
   defaultEndpoint,
   loadActiveEndpointId,
@@ -16,20 +9,6 @@ import {
   saveEndpoints,
   type EndpointConfig,
 } from './store';
-
-interface EndpointContextValue {
-  endpoints: EndpointConfig[];
-  active: EndpointConfig;
-  capabilities: Capabilities | 'loading';
-  select(id: string): void;
-  upsert(endpoint: EndpointConfig): void;
-  remove(id: string): void;
-  refreshCapabilities(): void;
-  /** True when the target reports it does not run this service. */
-  isUnavailable(serviceId: string): boolean;
-}
-
-const EndpointContext = createContext<EndpointContextValue | undefined>(undefined);
 
 export function EndpointProvider({
   children,
@@ -123,10 +102,4 @@ export function EndpointProvider({
   );
 
   return <EndpointContext.Provider value={value}>{children}</EndpointContext.Provider>;
-}
-
-export function useEndpoints(): EndpointContextValue {
-  const value = useContext(EndpointContext);
-  if (!value) throw new Error('useEndpoints must be used inside an EndpointProvider');
-  return value;
 }

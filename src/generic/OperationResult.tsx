@@ -15,6 +15,7 @@ export function OperationResult({
   durationMs: number;
 }) {
   const text = JSON.stringify(output, null, 2) ?? 'null';
+  const succeeded = status >= 200 && status < 300;
   return (
     <Container
       header={
@@ -34,7 +35,9 @@ export function OperationResult({
         </Header>
       }
     >
-      <StatusIndicator type="success">Succeeded</StatusIndicator>
+      <StatusIndicator type={succeeded ? 'success' : 'error'}>
+        {succeeded ? 'Succeeded' : 'Failed'}
+      </StatusIndicator>
       <Box variant="code">
         <pre className="glaux-response" data-testid="operation-response">
           {text}

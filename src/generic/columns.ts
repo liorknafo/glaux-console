@@ -37,8 +37,11 @@ export function inferResultShape(
   if (!outputShape?.members) return undefined;
 
   const path = resultKey ? resultKey.split('.').filter(part => part && part !== '[]') : undefined;
+  // Paginator result keys can carry list projections (`Items[].Name`), which no
+  // longer address a member once `[]` is stripped. Falling back beats showing
+  // raw JSON when the output shape has an obvious list member.
   const candidate = path
-    ? followPath(catalog, outputShape, path)
+    ? (followPath(catalog, outputShape, path) ?? findFirstList(catalog, outputShape))
     : findFirstList(catalog, outputShape);
   if (!candidate) return undefined;
 

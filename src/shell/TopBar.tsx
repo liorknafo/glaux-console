@@ -1,6 +1,6 @@
 import TopNavigation from '@cloudscape-design/components/top-navigation';
 import { useNavigate } from 'react-router-dom';
-import { useEndpoints } from '../endpoints/EndpointContext';
+import { useEndpoints } from '../endpoints/context';
 
 /**
  * The console top bar: glaux's own name and owl mark, never an AWS logo or
