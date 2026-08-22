@@ -1,0 +1,21 @@
+/*
+ * Cloudscape provides the design system; this file only covers the few places
+ * where raw text needs to keep its own formatting (CLI commands, JSON bodies).
+ */
+
+body {
+  margin: 0;
+}
+
+.glaux-cli-command,
+.glaux-response {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: Monaco, Menlo, Consolas, 'Courier New', monospace;
+}
+
+.glaux-response {
+  max-height: 32rem;
+  overflow: auto;
+}
