@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { checkEndpointUrl, isLikelyLocal, REFUSAL_MESSAGE } from './validation';
+import {
+  checkEndpointUrl,
+  isLikelyLocal,
+  METADATA_REFUSAL_MESSAGE,
+  REFUSAL_MESSAGE,
+} from './validation';
 
 describe('endpoint validation', () => {
   it('accepts local emulator endpoints', () => {
@@ -26,6 +31,18 @@ describe('endpoint validation', () => {
       const result = checkEndpointUrl(url);
       expect(result.ok, url).toBe(false);
       if (!result.ok) expect(result.reason).toBe(REFUSAL_MESSAGE);
+    }
+  });
+
+  it('refuses cloud instance-metadata addresses', () => {
+    for (const url of [
+      'http://169.254.169.254/latest/meta-data/',
+      'http://169.254.170.2/v2/credentials',
+      'http://metadata.google.internal/',
+    ]) {
+      const result = checkEndpointUrl(url);
+      expect(result.ok, url).toBe(false);
+      if (!result.ok) expect(result.reason).toBe(METADATA_REFUSAL_MESSAGE);
     }
   });
 

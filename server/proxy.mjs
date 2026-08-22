@@ -51,7 +51,12 @@ export function createProxyHandler({ fetchImpl = globalThis.fetch } = {}) {
       return json(res, 403, { message: safety.reason, refused: true });
     }
 
-    const target = buildTargetUrl(safety.url, envelope);
+    const targetUrl = buildTargetUrl(safety.url, envelope);
+    if (!targetUrl.ok) {
+      return json(res, 400, { message: targetUrl.reason, refused: true });
+    }
+    const target = targetUrl.url;
+
     const body = decodeBody(envelope);
     if (body.length > MAX_BODY_BYTES) {
       return json(res, 413, { message: 'Request body too large' });
@@ -106,15 +111,49 @@ export function createProxyHandler({ fetchImpl = globalThis.fetch } = {}) {
   };
 }
 
+/**
+ * Builds the target URL, taking the host from the validated endpoint and only
+ * the path from the browser.
+ *
+ * `new URL(path, origin)` is NOT safe here: a path of "//host/x" or
+ * "http://host/x" replaces the origin outright, which would let the page reach
+ * any host and walk straight past the real-AWS refusal. Such a path is a bug or
+ * an attack, so it is rejected rather than quietly rewritten.
+ *
+ * @returns {{ ok: true, url: URL } | { ok: false, reason: string }}
+ */
 function buildTargetUrl(endpointUrl, envelope) {
+  const requested =
+    envelope.path === undefined || envelope.path === null || envelope.path === ''
+      ? '/'
+      : String(envelope.path);
+
+  // Backslashes are folded to slashes by WHATWG URL parsing for http(s), so
+  // "\\host" escapes just as "//host" does.
+  const normalized = requested.replace(/\\/g, '/');
+  if (!normalized.startsWith('/') || normalized.startsWith('//')) {
+    return {
+      ok: false,
+      reason:
+        `Request path must be a single absolute path on the target endpoint, got "${requested}". ` +
+        'The host is always taken from the selected endpoint.',
+    };
+  }
+
   const base = endpointUrl.pathname.replace(/\/$/, '');
-  const path = envelope.path && envelope.path !== '/' ? envelope.path : '/';
-  const target = new URL(`${base}${path === '/' && base ? '/' : path}`, endpointUrl.origin);
+  const target = new URL(endpointUrl.origin);
+  // Assigning pathname cannot change the host, unlike resolving a URL.
+  target.pathname = `${base}${normalized}`;
+
   for (const [key, value] of Object.entries(envelope.query ?? {})) {
     if (Array.isArray(value)) for (const item of value) target.searchParams.append(key, item);
     else target.searchParams.append(key, value);
   }
-  return target;
+
+  if (target.origin !== endpointUrl.origin) {
+    return { ok: false, reason: 'Refusing to send a request to a host other than the endpoint.' };
+  }
+  return { ok: true, url: target };
 }
 
 function decodeBody(envelope) {

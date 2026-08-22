@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { checkEndpoint, REFUSAL_MESSAGE } from './endpoint-safety.mjs';
+import { checkEndpoint, METADATA_REFUSAL_MESSAGE, REFUSAL_MESSAGE } from './endpoint-safety.mjs';
 import { createProxyHandler } from './proxy.mjs';
 import { signRequest } from './sigv4.mjs';
 
@@ -69,6 +69,72 @@ describe('endpoint safety', () => {
   it('accepts local emulator endpoints', () => {
     expect(checkEndpoint('http://localhost:4566').ok).toBe(true);
     expect(checkEndpoint('http://127.0.0.1:9000/minio').ok).toBe(true);
+  });
+
+  it('refuses cloud instance-metadata addresses', () => {
+    // The backend signs and forwards whatever it is handed, so a metadata
+    // address would turn it into a way to read instance credentials.
+    for (const url of [
+      'http://169.254.169.254/latest/meta-data/',
+      'http://169.254.170.2/v2/credentials',
+      'http://[fd00:ec2::254]/latest/meta-data/',
+      'http://metadata.google.internal/computeMetadata/v1/',
+      'http://100.100.100.200/latest/meta-data/',
+    ]) {
+      const result = checkEndpoint(url);
+      expect(result.ok, url).toBe(false);
+      expect(result.reason).toBe(METADATA_REFUSAL_MESSAGE);
+    }
+  });
+});
+
+describe('target host confinement', () => {
+  /**
+   * The path in the request envelope comes from the browser. Resolving it as a
+   * URL would let "//host" or "http://host" replace the endpoint's origin and
+   * walk straight past the real-AWS refusal, so it must be rejected.
+   */
+  const escapes = [
+    '//sqs.us-east-1.amazonaws.com/',
+    'http://169.254.169.254/latest/meta-data/',
+    'https://evil.example.com/x',
+    '\\\\evil.example.com/x',
+    '//evil.example.com',
+  ];
+
+  it.each(escapes)('refuses a path that would leave the endpoint host: %s', async path => {
+    const fetchImpl = vi.fn();
+    const handler = createProxyHandler({ fetchImpl });
+    const { status, payload } = await call(handler, {
+      endpoint: 'http://localhost:4566',
+      signingName: 'sqs',
+      method: 'GET',
+      path,
+    });
+
+    expect(status).toBe(400);
+    expect(payload.refused).toBe(true);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('keeps the endpoint host for ordinary paths, including a mounted base path', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      status: 200,
+      headers: { forEach: callback => callback('application/json', 'content-type') },
+      arrayBuffer: async () => new TextEncoder().encode('{}').buffer,
+    }));
+    const handler = createProxyHandler({ fetchImpl });
+
+    await call(handler, {
+      endpoint: 'http://localhost:4566/emulator',
+      signingName: 's3',
+      method: 'GET',
+      path: '/my-bucket/a%20key',
+    });
+
+    expect(fetchImpl.mock.calls[0][0].toString()).toBe(
+      'http://localhost:4566/emulator/my-bucket/a%20key',
+    );
   });
 });
 
