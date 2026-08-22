@@ -448,3 +448,11 @@ exports[`generated forms are stable > sqs SendMessage keeps its modelled shape 1
   "pagination": undefined,
 }
 `;
+
+exports[`service index > resolves every normalized key to exactly one service 1`] = `
+[
+  "apigateway: apigateway",
+  "email: ses",
+  "es: es",
+]
+`;

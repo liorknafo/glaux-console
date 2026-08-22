@@ -25,8 +25,12 @@ const ROOT = join(HERE, '..');
 const OUT_DIR = join(ROOT, 'src', 'catalog', 'generated');
 const CACHE_DIR = join(HERE, '.model-cache');
 
-/** Pinned source of the models. `develop` is content-verified via the manifest hashes. */
-const BOTOCORE_REF = 'develop';
+/**
+ * Pinned to an immutable commit: a branch name would let two regenerations of
+ * the "same" catalog read different bytes, and the manifest could not say which.
+ * Bump this deliberately, and review the resulting catalog diff.
+ */
+const BOTOCORE_REF = '2fd71ea25993e2167f5a530e80cd898960fcdf67';
 const BOTOCORE_BASE = `https://raw.githubusercontent.com/boto/botocore/${BOTOCORE_REF}/botocore/data`;
 
 /** Documentation is kept as plain text and truncated — it is form help, not a manual. */
@@ -169,7 +173,7 @@ function reachable(shapes, roots) {
 
 async function fetchModel(modelPath) {
   await mkdir(CACHE_DIR, { recursive: true });
-  const cacheFile = join(CACHE_DIR, `${modelPath.replace(/\//g, '_')}.json`);
+  const cacheFile = join(CACHE_DIR, `${BOTOCORE_REF}_${modelPath.replace(/\//g, '_')}.json`);
   try {
     return await readFile(cacheFile, 'utf8');
   } catch {
@@ -280,17 +284,20 @@ async function main() {
   }
 
   const manifest = { source: `botocore@${BOTOCORE_REF}`, services: {} };
-  const index = [];
+  let index = [];
   let totalBytes = 0;
 
   for (const entry of entries) {
     const raw = await fetchModel(entry.model);
     const model = JSON.parse(raw);
     let paginators = null;
+    let paginatorsRaw = null;
     try {
-      paginators = JSON.parse(await fetchPaginators(entry.model));
+      paginatorsRaw = await fetchPaginators(entry.model);
+      paginators = JSON.parse(paginatorsRaw);
     } catch {
       paginators = null;
+      paginatorsRaw = null;
     }
 
     const service = buildService(entry, model, paginators);
@@ -301,6 +308,11 @@ async function main() {
     manifest.services[entry.id] = {
       model: entry.model,
       sourceSha256: createHash('sha256').update(raw).digest('hex'),
+      // Paginator data decides the pagination fields on every operation, so it
+      // is part of the provenance, not an incidental extra fetch.
+      paginatorsSha256: paginatorsRaw
+        ? createHash('sha256').update(paginatorsRaw).digest('hex')
+        : null,
       operations: Object.keys(service.operations).length,
       shapes: Object.keys(service.shapes).length,
     };
@@ -319,20 +331,44 @@ async function main() {
     );
   }
 
-  if (!only.length) {
-    index.sort((a, b) => a.id.localeCompare(b.id));
-    await writeFile(join(OUT_DIR, 'index.json'), `${JSON.stringify(index, null, 2)}\n`);
-    await writeFile(join(OUT_DIR, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  // A partial run must still leave index.json and manifest.json describing what
+  // is on disk: the app reads operation counts, protocols and endpoint prefixes
+  // from the eager index, and stale entries there are silently wrong.
+  if (only.length) {
+    const existingIndex = await readJson(join(OUT_DIR, 'index.json'), []);
+    const existingManifest = await readJson(join(OUT_DIR, 'manifest.json'), {
+      source: manifest.source,
+      services: {},
+    });
+    const merged = new Map(existingIndex.map(entry => [entry.id, entry]));
+    for (const entry of index) merged.set(entry.id, entry);
+    index = [...merged.values()];
+    manifest.services = { ...existingManifest.services, ...manifest.services };
   }
+
+  index.sort((a, b) => a.id.localeCompare(b.id));
+  await writeFile(join(OUT_DIR, 'index.json'), `${JSON.stringify(index, null, 2)}\n`);
+  await writeFile(join(OUT_DIR, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 
   process.stdout.write(
     `\n${entries.length} services, ${(totalBytes / 1024 / 1024).toFixed(1)} MiB of catalog\n`,
   );
 }
 
+async function readJson(path, fallback) {
+  try {
+    return JSON.parse(await readFile(path, 'utf8'));
+  } catch {
+    return fallback;
+  }
+}
+
 async function fetchPaginators(modelPath) {
   await mkdir(CACHE_DIR, { recursive: true });
-  const cacheFile = join(CACHE_DIR, `${modelPath.replace(/\//g, '_')}.paginators.json`);
+  const cacheFile = join(
+    CACHE_DIR,
+    `${BOTOCORE_REF}_${modelPath.replace(/\//g, '_')}.paginators.json`,
+  );
   try {
     return await readFile(cacheFile, 'utf8');
   } catch {

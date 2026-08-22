@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import manifest from './generated/manifest.json';
 import {
+  catalogKeyCollisions,
   findService,
   loadServiceCatalog,
   matchReportedService,
@@ -25,16 +26,47 @@ describe('service index', () => {
     expect(new Set(serviceIndex.map(entry => entry.id)).size).toBe(serviceIndex.length);
   });
 
-  it('records the botocore model each chunk was generated from', () => {
-    expect(manifest.source).toMatch(/^botocore@/);
+  it('pins an immutable botocore revision and records every input', () => {
+    // A branch name would let two regenerations read different bytes without
+    // the manifest being able to say which.
+    expect(manifest.source).toMatch(/^botocore@[0-9a-f]{40}$/);
     for (const entry of serviceIndex) {
       const record = (
-        manifest.services as Record<string, { sourceSha256: string; operations: number }>
+        manifest.services as Record<
+          string,
+          { sourceSha256: string; paginatorsSha256: string | null; operations: number }
+        >
       )[entry.id];
       expect(record, `manifest entry for ${entry.id}`).toBeDefined();
       expect(record.sourceSha256).toMatch(/^[0-9a-f]{64}$/);
+      // Paginator bytes decide every operation's pagination fields.
+      if (record.paginatorsSha256 !== null) {
+        expect(record.paginatorsSha256).toMatch(/^[0-9a-f]{64}$/);
+      }
       expect(record.operations).toBe(entry.operations);
     }
+  });
+
+  it('resolves every normalized key to exactly one service', () => {
+    // `apigatewayv2` has endpoint prefix `apigateway`, `sesv2` has `email`, and
+    // `opensearch` has `es`. Each of those is also another service's id, and a
+    // target reporting the bare name must reach that service, not the newer one.
+    expect(matchReportedService('apigateway')).toBe('apigateway');
+    expect(matchReportedService('email')).toBe('ses');
+    expect(matchReportedService('es')).toBe('es');
+
+    // A service's own id can never be taken over by another service's prefix.
+    for (const entry of serviceIndex) {
+      expect(matchReportedService(entry.id), entry.id).toBe(entry.id);
+    }
+
+    // Collisions are allowed but must be visible, so a regeneration that
+    // introduces a new one shows up here rather than silently re-pointing a key.
+    expect(
+      catalogKeyCollisions()
+        .map(collision => `${collision.key}: ${collision.owner}`)
+        .sort(),
+    ).toMatchSnapshot();
   });
 
   it('groups every service into a category', () => {
