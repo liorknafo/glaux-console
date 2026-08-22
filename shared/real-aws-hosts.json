@@ -1,0 +1,13 @@
+{
+  "$comment": "Host suffixes that identify a real AWS endpoint. glaux-console refuses to send a request to any of them: full CRUD against production is designed out, not warned about. Shared by the browser-side endpoint form and the console backend, which enforces it.",
+  "suffixes": [
+    "amazonaws.com",
+    "amazonaws.com.cn",
+    "amazonaws.cn",
+    "api.aws",
+    "aws.amazon.com",
+    "awsapps.com",
+    "cloudfront.net",
+    "amazonwebservices.com"
+  ]
+}
