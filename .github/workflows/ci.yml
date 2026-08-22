@@ -28,7 +28,7 @@ jobs:
       - run: npm ci
       - run: npm run format:check
       - run: npm run typecheck
-      - run: npm run lint -- --max-warnings 3
+      - run: npm run lint -- --max-warnings 0
       - run: npm run test
       - run: npm run build
       - uses: actions/upload-artifact@v4

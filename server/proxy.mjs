@@ -15,6 +15,10 @@ import { signRequest } from './sigv4.mjs';
  */
 
 const MAX_BODY_BYTES = 64 * 1024 * 1024;
+/** A response is buffered in memory, so it is capped independently. */
+const MAX_RESPONSE_BYTES = 64 * 1024 * 1024;
+/** Undici's per-stage defaults are 300s; a local emulator has no such excuse. */
+const REQUEST_TIMEOUT_MS = 60_000;
 
 /** Response bodies that are safe to hand back as text rather than base64. */
 const TEXTUAL = /^(text\/|application\/(json|xml|x-amz-json|x-www-form-urlencoded))/i;
@@ -76,6 +80,7 @@ export function createProxyHandler({ fetchImpl = globalThis.fetch } = {}) {
     );
 
     let upstream;
+    let raw;
     const startedAt = Date.now();
     try {
       upstream = await fetchImpl(target, {
@@ -85,15 +90,26 @@ export function createProxyHandler({ fetchImpl = globalThis.fetch } = {}) {
           ? undefined
           : body,
         redirect: 'manual',
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
+      // Reading the body can stall or run away long after the headers land, so
+      // it is bounded here rather than buffered whole with arrayBuffer().
+      raw = await readBoundedBody(upstream);
     } catch (error) {
+      if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+        return json(res, 504, {
+          message: `${target.origin} did not answer within ${REQUEST_TIMEOUT_MS / 1000}s.`,
+          unreachable: true,
+        });
+      }
+      if (error?.code === 'RESPONSE_TOO_LARGE') {
+        return json(res, 502, { message: error.message });
+      }
       return json(res, 502, {
         message: `Could not reach ${target.origin}: ${error.cause?.code ?? error.message}`,
         unreachable: true,
       });
     }
-
-    const raw = Buffer.from(await upstream.arrayBuffer());
     const responseHeaders = {};
     upstream.headers.forEach((value, key) => {
       responseHeaders[key.toLowerCase()] = value;
@@ -131,6 +147,13 @@ function buildTargetUrl(endpointUrl, envelope) {
   // Backslashes are folded to slashes by WHATWG URL parsing for http(s), so
   // "\\host" escapes just as "//host" does.
   const normalized = requested.replace(/\\/g, '/');
+  // SigV4 canonicalisation decodes each segment, so a malformed escape such as
+  // "/%ZZ" would throw a URIError out of the handler and answer nothing at all.
+  try {
+    decodeURIComponent(normalized);
+  } catch {
+    return { ok: false, reason: `Request path has a malformed percent-escape: "${requested}".` };
+  }
   if (!normalized.startsWith('/') || normalized.startsWith('//')) {
     return {
       ok: false,
@@ -154,6 +177,29 @@ function buildTargetUrl(endpointUrl, envelope) {
     return { ok: false, reason: 'Refusing to send a request to a host other than the endpoint.' };
   }
   return { ok: true, url: target };
+}
+
+/**
+ * Streams the response, failing once it exceeds the cap instead of letting a
+ * runaway body exhaust the process.
+ */
+async function readBoundedBody(upstream) {
+  if (!upstream.body) return Buffer.from(await upstream.arrayBuffer());
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of upstream.body) {
+    const buffer = Buffer.from(chunk);
+    size += buffer.length;
+    if (size > MAX_RESPONSE_BYTES) {
+      const error = new Error(
+        `Response exceeded ${MAX_RESPONSE_BYTES} bytes and was not buffered.`,
+      );
+      error.code = 'RESPONSE_TOO_LARGE';
+      throw error;
+    }
+    chunks.push(buffer);
+  }
+  return Buffer.concat(chunks);
 }
 
 function decodeBody(envelope) {

@@ -1,5 +1,5 @@
 {
-  "$comment": "Hosts glaux-console refuses to send a request to. `suffixes` identify real AWS endpoints: full CRUD against production is designed out, not warned about. `blockedHosts` are cloud instance-metadata services — the console backend is a signing proxy, so letting the page name one of these would turn it into a credential-exfiltration hole. Link-local addresses (169.254.0.0/16, fe80::/10) are refused wholesale for the same reason. Shared by the browser-side endpoint form and the console backend, which enforces it.",
+  "$comment": "Hosts glaux-console refuses to send a request to. `suffixes` identify real AWS endpoints: full CRUD against production is designed out, not warned about. `blockedHosts` are cloud instance-metadata services \u2014 the console backend is a signing proxy, so letting the page name one of these would turn it into a credential-exfiltration hole. Link-local addresses (169.254.0.0/16, fe80::/10) are refused wholesale for the same reason. Shared by the browser-side endpoint form and the console backend, which enforces it.",
   "suffixes": [
     "amazonaws.com",
     "amazonaws.com.cn",
@@ -10,5 +10,11 @@
     "cloudfront.net",
     "amazonwebservices.com"
   ],
-  "blockedHosts": ["metadata.google.internal", "metadata.goog", "instance-data", "100.100.100.200"]
+  "blockedHosts": [
+    "metadata",
+    "metadata.google.internal",
+    "metadata.goog",
+    "instance-data",
+    "100.100.100.200"
+  ]
 }

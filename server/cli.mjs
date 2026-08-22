@@ -52,12 +52,27 @@ if (args.help) {
 const proxy = createProxyHandler();
 
 const server = createServer((req, res) => {
-  proxy(req, res, () => serveStatic(req, res));
+  proxy(req, res, () => serveStatic(req, res)).catch(error => {
+    process.stderr.write(`request failed: ${error?.stack ?? error}\n`);
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.end('Internal error.');
+    }
+  });
 });
 
 async function serveStatic(req, res) {
   const url = new URL(req.url ?? '/', 'http://console.local');
-  const requested = normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, '');
+  let requested;
+  try {
+    // decodeURIComponent throws on a malformed escape such as "/%". This runs
+    // in an ignored promise, so an uncaught throw answers nothing at all.
+    requested = normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, '');
+  } catch {
+    res.statusCode = 400;
+    res.end('Malformed request path.');
+    return;
+  }
   let filePath = join(DIST, requested);
 
   try {

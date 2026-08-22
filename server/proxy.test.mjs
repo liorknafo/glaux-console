@@ -117,6 +117,23 @@ describe('target host confinement', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it('refuses a path with a malformed percent-escape before signing it', async () => {
+    // SigV4 canonicalisation decodes each segment; "/%ZZ" would throw a URIError
+    // out of the handler and answer nothing at all.
+    const fetchImpl = vi.fn();
+    const handler = createProxyHandler({ fetchImpl });
+    const { status, payload } = await call(handler, {
+      endpoint: 'http://localhost:4566',
+      signingName: 's3',
+      method: 'GET',
+      path: '/%ZZ',
+    });
+
+    expect(status).toBe(400);
+    expect(payload.message).toContain('percent-escape');
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it('keeps the endpoint host for ordinary paths, including a mounted base path', async () => {
     const fetchImpl = vi.fn(async () => ({
       status: 200,
@@ -232,6 +249,49 @@ describe('POST /api/request', () => {
 
     expect(payload.bodyEncoding).toBe('base64');
     expect(Buffer.from(payload.body, 'base64')).toEqual(Buffer.from(bytes));
+  });
+
+  it('gives up on a target that never answers', async () => {
+    const fetchImpl = vi.fn(async () => {
+      const error = new Error('The operation was aborted due to timeout');
+      error.name = 'TimeoutError';
+      throw error;
+    });
+    const handler = createProxyHandler({ fetchImpl });
+    const { status, payload } = await call(handler, {
+      endpoint: 'http://localhost:4566',
+      signingName: 'sqs',
+      method: 'POST',
+      path: '/',
+    });
+
+    expect(status).toBe(504);
+    expect(payload.unreachable).toBe(true);
+    expect(payload.message).toContain('did not answer');
+  });
+
+  it('refuses to buffer a response larger than the cap', async () => {
+    // 64 MiB cap: stream three 32 MiB chunks and expect the read to stop.
+    const chunk = new Uint8Array(32 * 1024 * 1024);
+    const fetchImpl = vi.fn(async () => ({
+      status: 200,
+      headers: { forEach: callback => callback('application/octet-stream', 'content-type') },
+      body: (async function* stream() {
+        yield chunk;
+        yield chunk;
+        yield chunk;
+      })(),
+    }));
+    const handler = createProxyHandler({ fetchImpl });
+    const { status, payload } = await call(handler, {
+      endpoint: 'http://localhost:4566',
+      signingName: 's3',
+      method: 'GET',
+      path: '/b/k',
+    });
+
+    expect(status).toBe(502);
+    expect(payload.message).toMatch(/exceeded .* bytes/);
   });
 
   it('reports an unreachable target rather than hanging', async () => {
