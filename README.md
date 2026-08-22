@@ -26,7 +26,7 @@ npm run serve -- --port 4599
 
 ## How it works
 
-```
+```text
 browser  ──▶  console backend  ──▶  target emulator
              (/api/request)         (http://localhost:4566)
 ```

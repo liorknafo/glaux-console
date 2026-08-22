@@ -11,7 +11,7 @@ body {
 .glaux-response {
   margin: 0;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   font-family: Monaco, Menlo, Consolas, 'Courier New', monospace;
 }
 

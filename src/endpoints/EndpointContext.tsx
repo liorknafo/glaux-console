@@ -70,32 +70,34 @@ export function EndpointProvider({
     saveActiveEndpointId(id);
   }, []);
 
-  const upsert = useCallback((endpoint: EndpointConfig) => {
-    setEndpoints(current => {
-      const index = current.findIndex(entry => entry.id === endpoint.id);
+  // State updaters stay pure: React may replay them (StrictMode does so in
+  // development), which would double-write browser storage and queue nested
+  // updates. The next value is computed here and the side effects run once.
+  const upsert = useCallback(
+    (endpoint: EndpointConfig) => {
+      const index = endpoints.findIndex(entry => entry.id === endpoint.id);
       const next =
         index === -1
-          ? [...current, endpoint]
-          : current.map(e => (e.id === endpoint.id ? endpoint : e));
+          ? [...endpoints, endpoint]
+          : endpoints.map(entry => (entry.id === endpoint.id ? endpoint : entry));
+      setEndpoints(next);
       saveEndpoints(next);
-      return next;
-    });
-  }, []);
+    },
+    [endpoints],
+  );
 
   const remove = useCallback(
     (id: string) => {
-      setEndpoints(current => {
-        const next = current.filter(entry => entry.id !== id);
-        const safe = next.length ? next : [defaultEndpoint(origin)];
-        saveEndpoints(safe);
-        if (id === activeId) {
-          setActiveId(safe[0].id);
-          saveActiveEndpointId(safe[0].id);
-        }
-        return safe;
-      });
+      const remaining = endpoints.filter(entry => entry.id !== id);
+      const next = remaining.length ? remaining : [defaultEndpoint(origin)];
+      setEndpoints(next);
+      saveEndpoints(next);
+      if (id === activeId) {
+        setActiveId(next[0].id);
+        saveActiveEndpointId(next[0].id);
+      }
     },
-    [activeId, origin],
+    [endpoints, activeId, origin],
   );
 
   const isUnavailable = useCallback(
