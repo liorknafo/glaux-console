@@ -14,11 +14,19 @@
 # structural run lands; listing one only means it gets deliberate attention.
 # Run 1 appends every service reported by the target's /_fakecloud/health that is
 # missing from this file, as tier: generic, status: pending.
+#
+# Run 1 (2026-08-22) had no live emulator to probe, so nothing was appended from
+# a health report. The catalogued service list lives in scripts/catalog-services.json
+# (56 services); a later run with a real target should reconcile the two.
 
 queue:
   - id: scaffold
     tier: structural
-    status: pending
+    status: done
+    landed: >
+      Vite + React 19 + TypeScript + Cloudscape shell (AppLayout, TopNavigation,
+      category-grouped service nav, breadcrumbs, hash routing), eslint/prettier/
+      vitest/playwright, GitHub Actions gate, Apache-2.0 LICENSE, README.
     notes: >
       Vite + React + TypeScript + Cloudscape app shell (AppLayout, TopNavigation,
       collapsible service nav, breadcrumbs), repo tooling (eslint, prettier,
@@ -27,7 +35,12 @@ queue:
 
   - id: endpoint-switcher
     tier: structural
-    status: pending
+    status: done
+    landed: >
+      Endpoint model in browser storage, top-bar switcher, /api/request backend
+      proxy with dummy SigV4, real-AWS host refusal enforced in the backend and
+      mirrored in the form, capability discovery via /_fakecloud/health cached
+      per endpoint with unavailable services badged in the nav.
     notes: >
       Endpoint model + switcher UI; default target is the origin serving the
       console. Backend proxy path (browser -> console backend -> emulator) with
@@ -37,7 +50,12 @@ queue:
 
   - id: catalog-codegen
     tier: structural
-    status: pending
+    status: done
+    landed: >
+      scripts/generate-catalog.mjs builds compact per-service chunks from
+      botocore's service-2.json models — 56 services, ~4,700 operations,
+      lazily imported. Committed output plus a manifest of source hashes, and
+      snapshot tests that fail when a regeneration would change a form.
     notes: >
       Build-time generation of the service catalog from AWS public Smithy/botocore
       models: operations, input/output shapes, enums, docs, pagination fields,
@@ -46,7 +64,13 @@ queue:
 
   - id: generic-layer
     tier: structural
-    status: pending
+    status: done
+    landed: >
+      Resources tab (inferred columns, the operation's own pagination tokens)
+      and Actions tab (generated forms with enums, nested structures, blob file
+      pickers, raw-JSON escape hatch), View as CLI on every form, and a
+      type-the-resource-name guard on destructive operations. Wire protocols:
+      json, rest-json, query, ec2, rest-xml.
     notes: >
       Resources tab (list/describe -> Cloudscape tables, inferred columns, real
       pagination) and Actions tab (generated forms, enums as selects, nested
