@@ -1,0 +1,341 @@
+{
+  "source": "botocore@develop",
+  "services": {
+    "athena": {
+      "model": "athena/2017-05-18",
+      "sourceSha256": "2931dcc88863ec682e4ba74414c871e81103f04bb799c9a513f603982cd7e315",
+      "operations": 70,
+      "shapes": 350
+    },
+    "glue": {
+      "model": "glue/2017-03-31",
+      "sourceSha256": "879b85210b1ceea92b23628198fcc11f5382a04821464b6c5fa61b39a9717527",
+      "operations": 299,
+      "shapes": 1808
+    },
+    "firehose": {
+      "model": "firehose/2015-08-04",
+      "sourceSha256": "5b799537c8faa79b564399300b71b1ec2bab08f9caba8d3428099389a7f01107",
+      "operations": 12,
+      "shapes": 289
+    },
+    "kinesis": {
+      "model": "kinesis/2013-12-02",
+      "sourceSha256": "47b35a31f0547bd825ec273bec7561120e99f53cf165b181dccf3ecfd87a7178",
+      "operations": 39,
+      "shapes": 151
+    },
+    "opensearch": {
+      "model": "opensearch/2021-01-01",
+      "sourceSha256": "8ba2b107483a25f6fb9c8057f5051cd90111b90a6d71db5de23d1aca327bde60",
+      "operations": 96,
+      "shapes": 624
+    },
+    "es": {
+      "model": "es/2015-01-01",
+      "sourceSha256": "cce240cf5095d65dde0fa20ef0e660d716895ced7e2b832c68f87a8b2ae9bf86",
+      "operations": 51,
+      "shapes": 342
+    },
+    "emr": {
+      "model": "emr/2009-03-31",
+      "sourceSha256": "af844a890a7c91626631963a28c7bebdb287ea0e7c5646d37e685fe126d0abf6",
+      "operations": 65,
+      "shapes": 372
+    },
+    "redshift": {
+      "model": "redshift/2012-12-01",
+      "sourceSha256": "b9b4e24260bed810a22fa8cbfda43fd26f511c56ac7c66433f1b057e50162d9c",
+      "operations": 145,
+      "shapes": 519
+    },
+    "redshift-data": {
+      "model": "redshift-data/2019-12-20",
+      "sourceSha256": "f2cf8ea06c19b8c23be758a7f32d7d9f6ce307db0ad39a63a7f02692dca195c0",
+      "operations": 12,
+      "shapes": 75
+    },
+    "timestream-write": {
+      "model": "timestream-write/2018-11-01",
+      "sourceSha256": "dd983b115020b1d63c6a1a327176a54274caae0ceaca0503fc3cfd32d180b5ea",
+      "operations": 19,
+      "shapes": 113
+    },
+    "s3": {
+      "model": "s3/2006-03-01",
+      "sourceSha256": "429763d64912af5edae4c7a0f20a8ac3e6fecf734cde5fc465016bc8badcdef9",
+      "operations": 116,
+      "shapes": 698
+    },
+    "efs": {
+      "model": "efs/2015-02-01",
+      "sourceSha256": "94ad004107f7b08d92df7c55d1694b56b2e3435686ab55026c6bc5f9b40f9d54",
+      "operations": 31,
+      "shapes": 126
+    },
+    "backup": {
+      "model": "backup/2018-11-15",
+      "sourceSha256": "da49a9f7562e493e913fd387379ad7d29a443cd0f977321cca9885bc6dc8e73b",
+      "operations": 115,
+      "shapes": 442
+    },
+    "dynamodb": {
+      "model": "dynamodb/2012-08-10",
+      "sourceSha256": "c9ee3a42d8c16be98f1029d368f0b6e7f62a47305c8f80cd6dd5318d6e4984c0",
+      "operations": 58,
+      "shapes": 471
+    },
+    "dynamodbstreams": {
+      "model": "dynamodbstreams/2012-08-10",
+      "sourceSha256": "95cd147c971cd46365849c08e8c596bfd557b31a448b0bbf494d91f65d0ac62f",
+      "operations": 4,
+      "shapes": 50
+    },
+    "rds": {
+      "model": "rds/2014-10-31",
+      "sourceSha256": "6b62f822b9df4c418f0ee8a966fd2694e0d0f11745520b6c9578b59640741c89",
+      "operations": 164,
+      "shapes": 644
+    },
+    "elasticache": {
+      "model": "elasticache/2015-02-02",
+      "sourceSha256": "032cc0488e5cf8f9b29c9b712a1f71aa320f662218e73636bb1886b8f65d9071",
+      "operations": 75,
+      "shapes": 332
+    },
+    "sqs": {
+      "model": "sqs/2012-11-05",
+      "sourceSha256": "282d08c85a2003ab91ed400a81339fe81952e446ae40a599877705903e870c0f",
+      "operations": 23,
+      "shapes": 85
+    },
+    "sns": {
+      "model": "sns/2010-03-31",
+      "sourceSha256": "a89df7db9dc5e766cb8ad5d21175c9cc28baf7cabc20ebf8f8a6dd5a2f5a7d2b",
+      "operations": 42,
+      "shapes": 140
+    },
+    "events": {
+      "model": "events/2015-10-07",
+      "sourceSha256": "a079841110d1ec8252b0ad2cbcb9091ed6871a99900ce5def93b2c1685ef830a",
+      "operations": 57,
+      "shapes": 341
+    },
+    "scheduler": {
+      "model": "scheduler/2021-06-30",
+      "sourceSha256": "428fbc6d766436e7b5394010e98987af0c738980ccab60d541dd5e5720e643e1",
+      "operations": 12,
+      "shapes": 111
+    },
+    "stepfunctions": {
+      "model": "stepfunctions/2016-11-23",
+      "sourceSha256": "bfb8c218406d881b3f5287ff6c98d51b048dfae2622b45a7f7ba0a14729b36af",
+      "operations": 37,
+      "shapes": 238
+    },
+    "swf": {
+      "model": "swf/2012-01-25",
+      "sourceSha256": "b5175d201336a91a8523a042b02f527115af63a01cb9a79936ff8946420ebd73",
+      "operations": 39,
+      "shapes": 218
+    },
+    "mq": {
+      "model": "mq/2017-11-27",
+      "sourceSha256": "81ebbec17e9bdf074cbc0db8f21ea96f5ccb14ec0c74f250b498b80bf61f1c49",
+      "operations": 25,
+      "shapes": 110
+    },
+    "appsync": {
+      "model": "appsync/2017-07-25",
+      "sourceSha256": "bf07702c047232c7f203014534f46e2dc7673ef1cd344a9802bc8071e7b05f1d",
+      "operations": 74,
+      "shapes": 302
+    },
+    "apigateway": {
+      "model": "apigateway/2015-07-09",
+      "sourceSha256": "677fa434fada74fed45b93419e8e59aa37eb80c886564fd54082136d127c4713",
+      "operations": 124,
+      "shapes": 269
+    },
+    "apigatewayv2": {
+      "model": "apigatewayv2/2018-11-29",
+      "sourceSha256": "fdb831dc9be4cb380b42e21525a1a7e6e379958b7d8a3df7fd71c6c7f50df47c",
+      "operations": 103,
+      "shapes": 340
+    },
+    "lambda": {
+      "model": "lambda/2015-03-31",
+      "sourceSha256": "06175cd3ffa0592a07ecfb00075d8751aa4e57eaa5240cd5db825b27af5460ef",
+      "operations": 88,
+      "shapes": 530
+    },
+    "batch": {
+      "model": "batch/2016-08-10",
+      "sourceSha256": "bd2963fdf3187e72a30948ff1dd1c6cf460bfed47f5284875f92c1f2417bd5bb",
+      "operations": 45,
+      "shapes": 368
+    },
+    "ec2": {
+      "model": "ec2/2016-11-15",
+      "sourceSha256": "dbc58e47b6f04f194969f1e9617a181bea17ac2dd23e820ab442a0f28f63b7bc",
+      "operations": 800,
+      "shapes": 4206
+    },
+    "ecs": {
+      "model": "ecs/2014-11-13",
+      "sourceSha256": "44e0fd74d3dd8f629bb5a2259635721806ac4c2daf17c62d38160544daf9bb3c",
+      "operations": 77,
+      "shapes": 608
+    },
+    "ecr": {
+      "model": "ecr/2015-09-21",
+      "sourceSha256": "562026c6bd20e8842e99e44ae1b61e5e9e583f2a020985f2ec269f3083ab3565",
+      "operations": 58,
+      "shapes": 355
+    },
+    "eks": {
+      "model": "eks/2017-11-01",
+      "sourceSha256": "0880faae2853e2f138b561726627813e088df211310c1b0b006798ce01c014f7",
+      "operations": 70,
+      "shapes": 429
+    },
+    "iam": {
+      "model": "iam/2010-05-08",
+      "sourceSha256": "15c70eaeb15bda321fbf0e9a0db35036d67c6ccd34d38acbcad3a086b89251c5",
+      "operations": 180,
+      "shapes": 552
+    },
+    "sts": {
+      "model": "sts/2011-06-15",
+      "sourceSha256": "b2c35d56d093494a539db6af3ddbcb601d614260b82e1351932323bd40cf9921",
+      "operations": 11,
+      "shapes": 74
+    },
+    "kms": {
+      "model": "kms/2014-11-01",
+      "sourceSha256": "e46c319dda3fad44819291b2a46cdfaeee6ece271504ae48b69fc2a7cf9158f1",
+      "operations": 54,
+      "shapes": 202
+    },
+    "secretsmanager": {
+      "model": "secretsmanager/2017-10-17",
+      "sourceSha256": "d568532fb0db48e0ce9c3c30b6f48aae734e1657105043990ef699ec48656671",
+      "operations": 23,
+      "shapes": 128
+    },
+    "acm": {
+      "model": "acm/2015-12-08",
+      "sourceSha256": "6c6599ff05946992b7238bca26250ee1eed453b0f93485c1f68788f3a135e30c",
+      "operations": 40,
+      "shapes": 216
+    },
+    "cognito-idp": {
+      "model": "cognito-idp/2016-04-18",
+      "sourceSha256": "fce4a4af97e11638439550a62ec6f7faa750f2adea94fc9b7dd1e5e70a9017c3",
+      "operations": 129,
+      "shapes": 568
+    },
+    "cognito-identity": {
+      "model": "cognito-identity/2014-06-30",
+      "sourceSha256": "2cfb6995b06c70ab8e9a5c7c1c0612f4212ba3c355f40d033a2b9ae323ff9fc5",
+      "operations": 23,
+      "shapes": 99
+    },
+    "organizations": {
+      "model": "organizations/2016-11-28",
+      "sourceSha256": "b886c4ce0e6db77a440055e674a36376faf581d37d5b9d959959447aca02cf86",
+      "operations": 63,
+      "shapes": 219
+    },
+    "account": {
+      "model": "account/2021-02-01",
+      "sourceSha256": "c150b0d68035fe2986acc5e74ca8e7485d119bed4bef24cfb7769b5b1732d54c",
+      "operations": 16,
+      "shapes": 60
+    },
+    "logs": {
+      "model": "logs/2014-03-28",
+      "sourceSha256": "b3c6eb36bc6e4975bdbab2592fcea79c21ce323c29ddb7f40ff1b0d0a5838c30",
+      "operations": 118,
+      "shapes": 676
+    },
+    "cloudwatch": {
+      "model": "cloudwatch/2010-08-01",
+      "sourceSha256": "6e6a0296b636228bca0f731d9306479e00e533a2b1326250961d3d135f52ad73",
+      "operations": 50,
+      "shapes": 334
+    },
+    "cloudformation": {
+      "model": "cloudformation/2010-05-15",
+      "sourceSha256": "b337ed5fdb9c761ef139c71894f0329a846fdf849750417c62f652e58c14f47c",
+      "operations": 90,
+      "shapes": 637
+    },
+    "cloudtrail": {
+      "model": "cloudtrail/2013-11-01",
+      "sourceSha256": "47518a69b3affabe424be6381e8c75b78b1579a661bc35ee65ad0696a459644c",
+      "operations": 60,
+      "shapes": 295
+    },
+    "config": {
+      "model": "config/2014-11-12",
+      "sourceSha256": "ef630eed5986b9b4961081b42f65463015436067bf69aea55759790b4cbd7533",
+      "operations": 102,
+      "shapes": 556
+    },
+    "ssm": {
+      "model": "ssm/2014-11-06",
+      "sourceSha256": "6ab6fa0da569b6b02554ae1c4ca52a713779106971f43291ef1c1d00219bcf83",
+      "operations": 152,
+      "shapes": 1198
+    },
+    "resourcegroupstaggingapi": {
+      "model": "resourcegroupstaggingapi/2017-01-26",
+      "sourceSha256": "6794221b461989c2af1aff563f028baa7ef93a4ecaf45d8494b76b7d130138c0",
+      "operations": 9,
+      "shapes": 71
+    },
+    "xray": {
+      "model": "xray/2016-04-12",
+      "sourceSha256": "32a7d37ca2d0099aaa0e2f7b734c29b99d43f22e0df59497e07ee44a35372379",
+      "operations": 38,
+      "shapes": 269
+    },
+    "route53": {
+      "model": "route53/2013-04-01",
+      "sourceSha256": "29dae1683f6128df6cad788a27af0e1aa1ce0e71a99e99b1c4e4d6f24e2b159b",
+      "operations": 71,
+      "shapes": 339
+    },
+    "elbv2": {
+      "model": "elbv2/2015-12-01",
+      "sourceSha256": "1e90353d93bf151c820d21f20801fc1ef3f5b042a897d46e2526894c7ecbb264",
+      "operations": 51,
+      "shapes": 361
+    },
+    "cloudfront": {
+      "model": "cloudfront/2020-05-31",
+      "sourceSha256": "7f09698066bdb21dbc693bed2fcfa3de281885c832c52384dcbd21612ece2fd2",
+      "operations": 167,
+      "shapes": 672
+    },
+    "servicediscovery": {
+      "model": "servicediscovery/2017-03-14",
+      "sourceSha256": "f5cf629a560d691c693e14339fb5516b2a12b6ea929005ba434491330d7a140f",
+      "operations": 30,
+      "shapes": 159
+    },
+    "ses": {
+      "model": "ses/2010-12-01",
+      "sourceSha256": "78f98dc6c5f4b83a60ba84091f5b76dd14b01a8a37be52cad384430b2a08b862",
+      "operations": 71,
+      "shapes": 281
+    },
+    "sesv2": {
+      "model": "sesv2/2019-09-27",
+      "sourceSha256": "68b284474263c41ee10642ab47bcd6ec5acaa5d9caaade3064dd1bf48e54a849",
+      "operations": 112,
+      "shapes": 578
+    }
+  }
+}

@@ -1,0 +1,450 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generated forms are stable > athena StartQueryExecution keeps its modelled shape 1`] = `
+{
+  "classification": "create",
+  "http": {
+    "method": "POST",
+    "requestUri": "/",
+  },
+  "input": {
+    "members": {
+      "ClientRequestToken": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "EngineConfiguration": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "structure",
+      },
+      "ExecutionParameters": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "list",
+      },
+      "QueryExecutionContext": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "structure",
+      },
+      "QueryString": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "ResultConfiguration": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "structure",
+      },
+      "ResultReuseConfiguration": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "structure",
+      },
+      "WorkGroup": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+    },
+    "required": [
+      "QueryString",
+    ],
+  },
+  "pagination": undefined,
+}
+`;
+
+exports[`generated forms are stable > dynamodb Query keeps its modelled shape 1`] = `
+{
+  "classification": "list",
+  "http": {
+    "method": "POST",
+    "requestUri": "/",
+  },
+  "input": {
+    "members": {
+      "AttributesToGet": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "list",
+      },
+      "ConditionalOperator": {
+        "enum": [
+          "AND",
+          "OR",
+        ],
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "ConsistentRead": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "boolean",
+      },
+      "ExclusiveStartKey": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "map",
+      },
+      "ExpressionAttributeNames": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "map",
+      },
+      "ExpressionAttributeValues": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "map",
+      },
+      "FilterExpression": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "IndexName": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "KeyConditionExpression": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "KeyConditions": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "map",
+      },
+      "Limit": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "integer",
+      },
+      "ProjectionExpression": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "QueryFilter": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "map",
+      },
+      "ReturnConsumedCapacity": {
+        "enum": [
+          "INDEXES",
+          "TOTAL",
+          "NONE",
+        ],
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "ScanIndexForward": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "boolean",
+      },
+      "Select": {
+        "enum": [
+          "ALL_ATTRIBUTES",
+          "ALL_PROJECTED_ATTRIBUTES",
+          "SPECIFIC_ATTRIBUTES",
+          "COUNT",
+        ],
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "TableName": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+    },
+    "required": [
+      "TableName",
+    ],
+  },
+  "pagination": {
+    "inputToken": "ExclusiveStartKey",
+    "limitKey": "Limit",
+    "outputToken": "LastEvaluatedKey",
+    "resultKey": "Items",
+  },
+}
+`;
+
+exports[`generated forms are stable > firehose PutRecordBatch keeps its modelled shape 1`] = `
+{
+  "classification": "create",
+  "http": {
+    "method": "POST",
+    "requestUri": "/",
+  },
+  "input": {
+    "members": {
+      "DeliveryStreamName": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "Records": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "list",
+      },
+    },
+    "required": [
+      "DeliveryStreamName",
+      "Records",
+    ],
+  },
+  "pagination": undefined,
+}
+`;
+
+exports[`generated forms are stable > iam CreateRole keeps its modelled shape 1`] = `
+{
+  "classification": "create",
+  "http": {
+    "method": "POST",
+    "requestUri": "/",
+  },
+  "input": {
+    "members": {
+      "AssumeRolePolicyDocument": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "Description": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "MaxSessionDuration": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "integer",
+      },
+      "Path": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "PermissionsBoundary": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "RoleName": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "Tags": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "list",
+      },
+    },
+    "required": [
+      "RoleName",
+      "AssumeRolePolicyDocument",
+    ],
+  },
+  "pagination": undefined,
+}
+`;
+
+exports[`generated forms are stable > s3 ListObjectsV2 keeps its modelled shape 1`] = `
+{
+  "classification": "list",
+  "http": {
+    "method": "GET",
+    "requestUri": "/{Bucket}?list-type=2",
+  },
+  "input": {
+    "members": {
+      "Bucket": {
+        "enum": undefined,
+        "location": "uri",
+        "locationName": "Bucket",
+        "type": "string",
+      },
+      "ContinuationToken": {
+        "enum": undefined,
+        "location": "querystring",
+        "locationName": "continuation-token",
+        "type": "string",
+      },
+      "Delimiter": {
+        "enum": undefined,
+        "location": "querystring",
+        "locationName": "delimiter",
+        "type": "string",
+      },
+      "EncodingType": {
+        "enum": [
+          "url",
+        ],
+        "location": "querystring",
+        "locationName": "encoding-type",
+        "type": "string",
+      },
+      "ExpectedBucketOwner": {
+        "enum": undefined,
+        "location": "header",
+        "locationName": "x-amz-expected-bucket-owner",
+        "type": "string",
+      },
+      "FetchOwner": {
+        "enum": undefined,
+        "location": "querystring",
+        "locationName": "fetch-owner",
+        "type": "boolean",
+      },
+      "MaxKeys": {
+        "enum": undefined,
+        "location": "querystring",
+        "locationName": "max-keys",
+        "type": "integer",
+      },
+      "OptionalObjectAttributes": {
+        "enum": undefined,
+        "location": "header",
+        "locationName": "x-amz-optional-object-attributes",
+        "type": "list",
+      },
+      "Prefix": {
+        "enum": undefined,
+        "location": "querystring",
+        "locationName": "prefix",
+        "type": "string",
+      },
+      "RequestPayer": {
+        "enum": [
+          "requester",
+        ],
+        "location": "header",
+        "locationName": "x-amz-request-payer",
+        "type": "string",
+      },
+      "StartAfter": {
+        "enum": undefined,
+        "location": "querystring",
+        "locationName": "start-after",
+        "type": "string",
+      },
+    },
+    "required": [
+      "Bucket",
+    ],
+  },
+  "pagination": {
+    "inputToken": "ContinuationToken",
+    "limitKey": "MaxKeys",
+    "outputToken": "NextContinuationToken",
+    "resultKey": "Contents",
+  },
+}
+`;
+
+exports[`generated forms are stable > sqs SendMessage keeps its modelled shape 1`] = `
+{
+  "classification": "create",
+  "http": {
+    "method": "POST",
+    "requestUri": "/",
+  },
+  "input": {
+    "members": {
+      "DelaySeconds": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "integer",
+      },
+      "MessageAttributes": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "map",
+      },
+      "MessageBody": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "MessageDeduplicationId": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "MessageGroupId": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+      "MessageSystemAttributes": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "map",
+      },
+      "QueueUrl": {
+        "enum": undefined,
+        "location": undefined,
+        "locationName": undefined,
+        "type": "string",
+      },
+    },
+    "required": [
+      "QueueUrl",
+      "MessageBody",
+    ],
+  },
+  "pagination": undefined,
+}
+`;
