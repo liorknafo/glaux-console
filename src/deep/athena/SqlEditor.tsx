@@ -49,6 +49,9 @@ export function SqlEditor({
   const [loadError, setLoadError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [preferences, setPreferences] = useState<CodeEditorProps.Preferences>();
+  // Controlled height with its own resize handler, so the editor's drag handle
+  // works; passing the height alone renders a non-interactive editor.
+  const [contentHeight, setContentHeight] = useState(280);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,7 +104,8 @@ export function SqlEditor({
             setAttempt(current => current + 1);
           }}
           i18nStrings={EDITOR_I18N}
-          editorContentHeight={280}
+          editorContentHeight={contentHeight}
+          onEditorContentResize={event => setContentHeight(event.detail.height)}
           ariaLabel="SQL query"
         />
       )}
