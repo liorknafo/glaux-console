@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ServiceCatalog } from '../catalog/types';
 import { AthenaScreen } from './athena/AthenaScreen';
+import { S3Screen } from './s3/S3Screen';
 
 /**
  * Hand-built screens, keyed by service id.
@@ -21,6 +22,11 @@ export const deepScreens: Record<string, DeepScreen> = {
     id: 'query-editor',
     label: 'Query editor',
     render: catalog => <AthenaScreen catalog={catalog} />,
+  },
+  s3: {
+    id: 'browser',
+    label: 'Browser',
+    render: catalog => <S3Screen catalog={catalog} />,
   },
 };
 
