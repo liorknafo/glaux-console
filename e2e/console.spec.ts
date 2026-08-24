@@ -48,7 +48,7 @@ test('discovers capabilities and lists queues through the console backend', asyn
   await useFixtureEndpoint(page);
 
   await page.goto('/#/');
-  await expect(page.getByTestId('target-status')).toContainText('3 services running');
+  await expect(page.getByTestId('target-status')).toContainText('5 services running');
   await expect(page.getByTestId('target-status')).toContainText('e2e-fixture');
 
   await page.getByTestId('service-card-sqs').getByText('SQS').click();
@@ -136,4 +136,87 @@ test('explains an unsupported SQL construct instead of a bare error', async ({ p
   await expect(explanation.getByRole('link')).toHaveAttribute('href', /glaux/);
   await expect(page.getByTestId('query-results')).toHaveCount(0);
   await expect(page.getByTestId('query-history')).toContainText('UNSUPPORTED');
+});
+
+test('browses a bucket, uploads an object, and downloads it back', async ({ page }) => {
+  await useFixtureEndpoint(page);
+  await page.goto('/#/service/s3');
+
+  await page.getByTestId('open-bucket-lake').click();
+
+  // The delimiter is what makes the flat key space browsable: the seeded keys
+  // collapse into one prefix row rather than showing as keys.
+  const objects = page.getByTestId('object-table');
+  await expect(objects.getByTestId('open-prefix-orders/')).toBeVisible();
+
+  await page.getByTestId('upload-object').click();
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'e2e.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('uploaded by the end-to-end test'),
+  });
+  await page.getByTestId('confirm-upload').click();
+
+  await expect(page.getByTestId('s3-notice')).toContainText('e2e.txt');
+  await expect(objects).toContainText('e2e.txt');
+
+  await page.getByRole('radio', { name: 'Select e2e.txt' }).click();
+  const details = page.getByTestId('object-details');
+  await expect(details.getByTestId('metadata-size')).toContainText('31 B');
+  await expect(details).toContainText('text/plain');
+  await expect(details.getByTestId('user-metadata')).toContainText('written-by');
+
+  // The bytes come back through the console backend and are handed to the
+  // browser as a file, which is the whole point of the download path.
+  const download = page.waitForEvent('download');
+  await page.getByTestId('download-object').click();
+  expect((await download).suggestedFilename()).toBe('e2e.txt');
+});
+
+test('watches a Firehose stream deliver a record into S3', async ({ page }) => {
+  await useFixtureEndpoint(page);
+  await page.goto('/#/service/firehose');
+
+  await page.getByTestId('open-stream-orders-to-lake').click();
+  await expect(page.getByTestId('stream-status')).toContainText('ACTIVE');
+
+  // Delivery activity is read out of the destination bucket, so this is S3
+  // answering rest-xml behind a Firehose screen.
+  const delivered = page.getByTestId('delivered-objects');
+  await expect(delivered).toContainText('orders/2026/08/24/orders-2.json.gz');
+  const before = Number(await page.getByTestId('objects-written').innerText());
+
+  await page.getByRole('tab', { name: 'Put test records' }).click();
+  await page.getByTestId('put-records').click();
+  await expect(page.getByTestId('put-result')).toContainText('2 records accepted');
+
+  // The fixture lands a put as an object straight away, so the activity panel
+  // has one more object to report once it refreshes.
+  await page.getByRole('tab', { name: 'Delivery activity' }).click();
+  await expect(page.getByTestId('objects-written')).toHaveText(String(before + 1));
+
+  // Newest first, so the object just delivered is the first row.
+  const newest = delivered.getByRole('link').first();
+  const key = (await newest.innerText()).split('/').pop() ?? '';
+  await newest.click();
+
+  // The S3 browser opens on the bucket, at the prefix the object sits in.
+  await expect(page.getByTestId('prefix-crumbs')).toContainText('lake');
+  await expect(page.getByTestId('object-table')).toContainText(key);
+});
+
+test('opens the Athena editor from a Glue table', async ({ page }) => {
+  await useFixtureEndpoint(page);
+  await page.goto('/#/service/glue');
+
+  await page.getByTestId('open-database-analytics').click();
+  await page.getByTestId('open-table-orders').click();
+
+  await expect(page.getByTestId('columns-table')).toContainText('order_id');
+  await page.getByTestId('query-this-table').click();
+
+  // The statement lands in the real Ace editor, and runs from there.
+  await expect(page.locator('.ace_content')).toContainText('FROM "analytics"."orders"');
+  await page.getByTestId('run-query').click();
+  await expect(page.getByTestId('query-state')).toContainText('SUCCEEDED');
 });

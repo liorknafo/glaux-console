@@ -101,24 +101,28 @@ queue:
 
   - id: glue
     tier: deep
-    status: pending
+    status: done
     notes: >
-      Database/table browser: columns, partitions, SerDe, partition projection.
-      "Query this table" prefills the Athena editor.
+      Done: catalog browser — databases, tables, and a table's columns,
+      partitions, storage descriptor, SerDe and partition projection. "Query
+      this table" prefills and opens the Athena editor.
 
   - id: firehose
     tier: deep
-    status: pending
+    status: done
     notes: >
-      Delivery streams, buffering config, live delivery activity (objects written,
-      error-prefix records), "put test records", links to produced S3 objects.
+      Done: delivery monitor — streams, buffering and destination config,
+      delivery activity read out of the destination bucket (objects written and
+      error-prefix records), "put test records", and links into the S3 browser
+      for every object produced.
 
   - id: s3
     tier: deep
-    status: pending
+    status: done
     notes: >
-      Bucket/prefix browser, object upload/download/delete, metadata view.
-      Parquet preview is a follow-up, not part of this entry.
+      Done: bucket and prefix browser (delimiter-based), object upload,
+      download, delete behind the destructive guard, and HeadObject metadata.
+      Parquet preview remains a follow-up, as this entry said.
 
   - id: sqs
     tier: deep
