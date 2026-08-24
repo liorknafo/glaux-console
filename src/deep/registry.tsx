@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ServiceCatalog } from '../catalog/types';
 import { AthenaScreen } from './athena/AthenaScreen';
+import { FirehoseScreen } from './firehose/FirehoseScreen';
 import { GlueScreen } from './glue/GlueScreen';
 import { S3Screen } from './s3/S3Screen';
 
@@ -8,8 +9,8 @@ import { S3Screen } from './s3/S3Screen';
  * Hand-built screens, keyed by service id.
  *
  * The generated Resources and Actions tabs are the floor for every service; a
- * service in this registry gets its own tab in front of them. Adding the Glue
- * and Firehose screens later is one entry each.
+ * service in this registry gets its own tab in front of them. Adding a screen
+ * for another service is one entry each.
  */
 export interface DeepScreen {
   /** Tab id, and the anchor the tab is selected by. */
@@ -23,6 +24,11 @@ export const deepScreens: Record<string, DeepScreen> = {
     id: 'query-editor',
     label: 'Query editor',
     render: catalog => <AthenaScreen catalog={catalog} />,
+  },
+  firehose: {
+    id: 'delivery',
+    label: 'Delivery',
+    render: catalog => <FirehoseScreen catalog={catalog} />,
   },
   glue: {
     id: 'data-catalog',
