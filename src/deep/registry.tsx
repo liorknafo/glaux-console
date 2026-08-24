@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ServiceCatalog } from '../catalog/types';
 import { AthenaScreen } from './athena/AthenaScreen';
+import { GlueScreen } from './glue/GlueScreen';
 import { S3Screen } from './s3/S3Screen';
 
 /**
@@ -22,6 +23,11 @@ export const deepScreens: Record<string, DeepScreen> = {
     id: 'query-editor',
     label: 'Query editor',
     render: catalog => <AthenaScreen catalog={catalog} />,
+  },
+  glue: {
+    id: 'data-catalog',
+    label: 'Data catalog',
+    render: catalog => <GlueScreen catalog={catalog} />,
   },
   s3: {
     id: 'browser',

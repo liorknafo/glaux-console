@@ -222,7 +222,7 @@ function TableNode({
         >
           Query this table
         </Button>
-        {table.location && <Box variant="small">{table.location}</Box>}
+        {table.storage.location && <Box variant="small">{table.storage.location}</Box>}
         {table.columns.length === 0 && (
           <Box color="text-body-secondary" variant="small">
             The catalog records no columns for this table.

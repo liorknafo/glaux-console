@@ -16,6 +16,7 @@ import Textarea from '@cloudscape-design/components/textarea';
 import { describeError } from '../../api/client';
 import type { ServiceCatalog } from '../../catalog/types';
 import { useEndpoints } from '../../endpoints/context';
+import { clearAthenaQuery, peekAthenaQuery } from '../handoff';
 import { createQueryRunner, waitForTerminal } from './execution';
 import { HistoryPanel, SavedQueriesPanel } from './HistoryPanel';
 import { QueryFailurePanel } from './QueryFailurePanel';
@@ -53,8 +54,15 @@ export function AthenaScreen({ catalog }: { catalog: ServiceCatalog }) {
   const { active } = useEndpoints();
   const endpointKey = active.url;
 
-  const [sql, setSql] = useState(STARTER_QUERY);
-  const [context, setContext] = useState<QueryContext>(() => loadQueryContext(endpointKey));
+  // Another screen may have opened this one with a statement ready — Glue's
+  // "Query this table" does exactly that.
+  const [handoff] = useState(() => peekAthenaQuery());
+  const [sql, setSql] = useState(handoff?.sql ?? STARTER_QUERY);
+  const [context, setContext] = useState<QueryContext>(() => ({
+    ...loadQueryContext(endpointKey),
+    ...(handoff?.database ? { database: handoff.database } : {}),
+    ...(handoff?.catalog ? { catalog: handoff.catalog } : {}),
+  }));
   const [snapshot, setSnapshot] = useState<QueryExecutionSnapshot>();
   const [failure, setFailure] = useState<QueryFailure>();
   const [callError, setCallError] = useState<{ header: string; detail: string }>();
@@ -100,6 +108,10 @@ export function AthenaScreen({ catalog }: { catalog: ServiceCatalog }) {
   }, []);
 
   useEffect(() => () => runControl.current?.abort(), []);
+
+  useEffect(() => {
+    clearAthenaQuery();
+  }, []);
 
   const runner = useMemo(() => createQueryRunner(active, catalog), [active, catalog]);
 
