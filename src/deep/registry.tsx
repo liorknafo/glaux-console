@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ServiceCatalog } from '../catalog/types';
 import { AthenaScreen } from './athena/AthenaScreen';
+import { DynamoDbScreen } from './dynamodb/DynamoDbScreen';
 import { EventBridgeScreen } from './eventbridge/EventBridgeScreen';
 import { FirehoseScreen } from './firehose/FirehoseScreen';
 import { GlueScreen } from './glue/GlueScreen';
@@ -26,6 +27,11 @@ export const deepScreens: Record<string, DeepScreen> = {
     id: 'query-editor',
     label: 'Query editor',
     render: catalog => <AthenaScreen catalog={catalog} />,
+  },
+  dynamodb: {
+    id: 'tables',
+    label: 'Tables',
+    render: catalog => <DynamoDbScreen catalog={catalog} />,
   },
   events: {
     id: 'rules',
