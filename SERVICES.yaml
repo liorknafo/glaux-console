@@ -126,18 +126,33 @@ queue:
 
   - id: sqs
     tier: deep
-    status: pending
-    notes: Queue list, attributes, peek without consuming, send, purge, DLQ view.
+    status: done
+    notes: >
+      Done: queue list, full attribute view, a peek that receives with
+      VisibilityTimeout 0 so messages stay available, send, delete a message,
+      purge behind the destructive guard, and both directions of the redrive
+      relationship (the queue's own DLQ, and ListDeadLetterSourceQueues).
 
   - id: eventbridge
     tier: deep
-    status: pending
-    notes: Buses, rules, targets, and an event-pattern tester against sample events.
+    status: done
+    notes: >
+      Done: bus selector, rules with state and trigger kind, enable/disable,
+      targets with how each is given its input, put a test event, and an
+      event-pattern tester. Matching is evaluated in the browser against AWS's
+      documented content-filtering grammar (including $or and all eight
+      operators), so the verdict names the member that rejected the event and
+      an unsupported construct is reported rather than answered.
 
   - id: dynamodb
     tier: deep
-    status: pending
-    notes: Tables, indexes, item browser/editor, query and scan with expression inputs.
+    status: done
+    notes: >
+      Done: table list, key schema, indexes and attribute definitions; item
+      browser with scan/query, index selection, key-condition, filter and
+      projection expressions, expression names/values, and paging on
+      LastEvaluatedKey; item editor in DynamoDB or plain JSON, with delete
+      behind the destructive guard.
 
   - id: lambda
     tier: generic
