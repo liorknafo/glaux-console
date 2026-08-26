@@ -7,18 +7,30 @@
 #   status: pending | in_progress | done
 #   tier:   structural  - repo/shell/infrastructure work, not a service
 #           deep        - hand-built screen (see the spec's "Hand-built screens")
-#           generic     - nav entry, icon, list-column overrides, smoke test on top
-#                         of the generated catalog layer
+#           generic     - nav entry, list-column overrides, smoke test on top
+#                         of the generated catalog layer. Since run 4 these
+#                         overrides live in src/generic/profiles.ts as a
+#                         "service profile": promoted read and action
+#                         operations, curated columns, and whether a read
+#                         describes one thing or lists many.
 #
 # Services not listed here still work through the generic catalog layer once the
 # structural run lands; listing one only means it gets deliberate attention.
 # Run 1 appends every service reported by the target's /_fakecloud/health that is
 # missing from this file, as tier: generic, status: pending.
+#
+# Run 1 (2026-08-22) had no live emulator to probe, so nothing was appended from
+# a health report. The catalogued service list lives in scripts/catalog-services.json
+# (56 services); a later run with a real target should reconcile the two.
 
 queue:
   - id: scaffold
     tier: structural
-    status: pending
+    status: done
+    landed: >
+      Vite + React 19 + TypeScript + Cloudscape shell (AppLayout, TopNavigation,
+      category-grouped service nav, breadcrumbs, hash routing), eslint/prettier/
+      vitest/playwright, GitHub Actions gate, Apache-2.0 LICENSE, README.
     notes: >
       Vite + React + TypeScript + Cloudscape app shell (AppLayout, TopNavigation,
       collapsible service nav, breadcrumbs), repo tooling (eslint, prettier,
@@ -27,7 +39,12 @@ queue:
 
   - id: endpoint-switcher
     tier: structural
-    status: pending
+    status: done
+    landed: >
+      Endpoint model in browser storage, top-bar switcher, /api/request backend
+      proxy with dummy SigV4, real-AWS host refusal enforced in the backend and
+      mirrored in the form, capability discovery via /_fakecloud/health cached
+      per endpoint with unavailable services badged in the nav.
     notes: >
       Endpoint model + switcher UI; default target is the origin serving the
       console. Backend proxy path (browser -> console backend -> emulator) with
@@ -37,7 +54,12 @@ queue:
 
   - id: catalog-codegen
     tier: structural
-    status: pending
+    status: done
+    landed: >
+      scripts/generate-catalog.mjs builds compact per-service chunks from
+      botocore's service-2.json models — 56 services, ~4,700 operations,
+      lazily imported. Committed output plus a manifest of source hashes, and
+      snapshot tests that fail when a regeneration would change a form.
     notes: >
       Build-time generation of the service catalog from AWS public Smithy/botocore
       models: operations, input/output shapes, enums, docs, pagination fields,
@@ -46,7 +68,13 @@ queue:
 
   - id: generic-layer
     tier: structural
-    status: pending
+    status: done
+    landed: >
+      Resources tab (inferred columns, the operation's own pagination tokens)
+      and Actions tab (generated forms with enums, nested structures, blob file
+      pickers, raw-JSON escape hatch), View as CLI on every form, and a
+      type-the-resource-name guard on destructive operations. Wire protocols:
+      json, rest-json, query, ec2, rest-xml.
     notes: >
       Resources tab (list/describe -> Cloudscape tables, inferred columns, real
       pagination) and Actions tab (generated forms, enums as selects, nested
@@ -55,7 +83,20 @@ queue:
 
   - id: athena
     tier: deep
-    status: pending
+    status: done
+    landed: >
+      Hand-built query editor mounted as the first tab on the Athena service
+      screen: Cloudscape CodeEditor over a lazily-loaded Ace with SQL mode,
+      Glue-backed schema tree (databases -> tables -> columns and partition
+      keys) with "Query this table", the real StartQueryExecution /
+      GetQueryExecution / GetQueryResults / StopQueryExecution lifecycle with
+      backed-off polling, a results table paged by the service's own NextToken,
+      bytes scanned and timings, and per-endpoint query history and saved
+      queries in browser storage. Failures are classified: an unsupported
+      construct renders as a first-class explanation naming the construct and
+      linking to glaux's SQL coverage docs, everything else as an ordinary
+      error. Deep screens now mount through src/deep/registry.tsx, ready for
+      glue and firehose.
     notes: >
       The flagship screen. Ace CodeEditor, Glue-backed schema tree, run/cancel,
       results table with pagination, bytes scanned + timing, query history, saved
@@ -64,62 +105,112 @@ queue:
 
   - id: glue
     tier: deep
-    status: pending
+    status: done
     notes: >
-      Database/table browser: columns, partitions, SerDe, partition projection.
-      "Query this table" prefills the Athena editor.
+      Done: catalog browser — databases, tables, and a table's columns,
+      partitions, storage descriptor, SerDe and partition projection. "Query
+      this table" prefills and opens the Athena editor.
 
   - id: firehose
     tier: deep
-    status: pending
+    status: done
     notes: >
-      Delivery streams, buffering config, live delivery activity (objects written,
-      error-prefix records), "put test records", links to produced S3 objects.
+      Done: delivery monitor — streams, buffering and destination config,
+      delivery activity read out of the destination bucket (objects written and
+      error-prefix records), "put test records", and links into the S3 browser
+      for every object produced.
 
   - id: s3
     tier: deep
-    status: pending
+    status: done
     notes: >
-      Bucket/prefix browser, object upload/download/delete, metadata view.
-      Parquet preview is a follow-up, not part of this entry.
+      Done: bucket and prefix browser (delimiter-based), object upload,
+      download, delete behind the destructive guard, and HeadObject metadata.
+      Parquet preview remains a follow-up, as this entry said.
 
   - id: sqs
     tier: deep
-    status: pending
-    notes: Queue list, attributes, peek without consuming, send, purge, DLQ view.
+    status: done
+    notes: >
+      Done: queue list, full attribute view, a peek that receives with
+      VisibilityTimeout 0 so messages stay available, send, delete a message,
+      purge behind the destructive guard, and both directions of the redrive
+      relationship (the queue's own DLQ, and ListDeadLetterSourceQueues).
 
   - id: eventbridge
     tier: deep
-    status: pending
-    notes: Buses, rules, targets, and an event-pattern tester against sample events.
+    status: done
+    notes: >
+      Done: bus selector, rules with state and trigger kind, enable/disable,
+      targets with how each is given its input, put a test event, and an
+      event-pattern tester. Matching is evaluated in the browser against AWS's
+      documented content-filtering grammar (including $or and all eight
+      operators), so the verdict names the member that rejected the event and
+      an unsupported construct is reported rather than answered.
 
   - id: dynamodb
     tier: deep
-    status: pending
-    notes: Tables, indexes, item browser/editor, query and scan with expression inputs.
+    status: done
+    notes: >
+      Done: table list, key schema, indexes and attribute definitions; item
+      browser with scan/query, index selection, key-condition, filter and
+      projection expressions, expression names/values, and paging on
+      LastEvaluatedKey; item editor in DynamoDB or plain JSON, with delete
+      behind the destructive guard.
 
   - id: lambda
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: opens on ListFunctions with name, runtime, package type, memory,
+      timeout, state, last modified and version; event source mappings, layers
+      and versions curated too. GetFunctionConfiguration renders as a result
+      rather than a table of its Layers. Invoke, CreateFunction and
+      UpdateFunctionCode/Configuration promoted on Actions.
+    deferred: >
+      "Recorded invocations via introspection" — no target implements an
+      invocation-introspection endpoint that this run could verify against, and
+      the Lambda service model has no operation for it. Not invented.
     notes: Functions list, config, invoke with payload, recorded invocations via introspection.
 
   - id: stepfunctions
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: state machines, executions (name, status, start/stop), and
+      GetExecutionHistory as the event spine — id, type, timestamp and
+      previous event id, with the per-type detail structures in the raw
+      response. StartExecution/StopExecution promoted on Actions.
     notes: State machines, executions, execution history.
 
   - id: kinesis
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: streams, shard list, and GetRecords with sequence number,
+      partition key, arrival time and data. GetShardIterator is promoted next
+      to GetRecords because reading records needs both. PutRecord/PutRecords,
+      SplitShard and MergeShards promoted on Actions.
     notes: Streams, shards, put/get records.
 
   - id: secretsmanager
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: secrets with rotation state and change/access dates, and version
+      ids. GetSecretValue and DescribeSecret render as results rather than
+      tables of VersionStages and ExternalSecretRotationMetadata.
+      CreateSecret/PutSecretValue/RotateSecret promoted on Actions.
 
   - id: ssm
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: Parameter Store (DescribeParameters, GetParametersByPath,
+      GetParameter), documents, Run Command (ListCommands,
+      ListCommandInvocations) and instance information — seven curated views
+      out of 152 modelled operations. PutParameter and SendCommand promoted
+      on Actions.
 
   - id: iam
     tier: generic
