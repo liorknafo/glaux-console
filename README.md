@@ -37,6 +37,7 @@ The browser never talks to the target directly. It builds the wire request from 
 - **`src/protocol/`** — request serialization and response parsing for the `json`, `rest-json`, `query`, `ec2`, and `rest-xml` wire protocols, plus the "View as CLI" renderer.
 - **`src/generic/`** — the Resources tab (list/describe → Cloudscape tables with the service's own pagination) and Actions tab (generated forms, raw-JSON escape hatch, destructive-action guard).
 - **`src/deep/`** — hand-built screens, mounted in front of the generated tabs by `src/deep/registry.tsx`. Today: the Athena query editor, the Glue catalog browser, the Firehose delivery monitor, and the S3 object browser.
+- **`src/generic/profiles.ts`** — per-service presentation overrides for services with no hand-built screen. See [Service profiles](#service-profiles).
 - **`server/`** — the standalone backend: static assets, `/api/request`, SigV4, and the real-AWS refusal. The embedded deployment (glaux mounting the assets at `/console`) implements the same contract.
 
 ## Adding a service
@@ -48,6 +49,30 @@ Services are catalogued, not hand-written. Add an entry to `scripts/catalog-serv
 ```
 
 where `model` is the path under `botocore/data`. Then `npm run catalog -- sagemaker && npm run catalog` and commit the generated chunk. The service appears in the navigation with working Resources and Actions tabs.
+
+## Service profiles
+
+The generated tabs work for every catalogued service without any further configuration. What they cannot know is which of a service's operations you opened the screen to run: Systems Manager models 152 of them, Lambda 88, and an alphabetical picker over all of them is complete and unusable. A **profile** in [`src/generic/profiles.ts`](src/generic/profiles.ts) is a handful of lines that says which ones matter.
+
+```ts
+lambda: {
+  summary: 'Functions, their configuration, and their event source mappings. …',
+  resources: [
+    { operation: 'ListFunctions', columns: ['FunctionName', 'Runtime', 'MemorySize', …] },
+    { operation: 'GetFunctionConfiguration', raw: true },
+  ],
+  actions: ['Invoke', 'CreateFunction', 'UpdateFunctionCode', …],
+},
+```
+
+- **`resources`** are promoted to a "Common" group at the top of the Resources picker, and the first one is preselected so the tab opens on something rather than on a placeholder. Nothing is requested until you run it.
+- **`columns`** replaces column inference for that view. Inference keeps the first eight scalar members of the element shape, which for `ListFunctions` leads with `Role`, `Handler` and `CodeSize` and never reaches `State`. The raw response is still one expander away, so nothing is hidden.
+- **`raw`** says this read describes one thing rather than listing many — a distinction the service model does not record. Without it, inference falls back to the first list member of the output shape, so `GetSecretValue` renders a table of its `VersionStages` and `GetFunctionConfiguration` one of its `Layers`: a table of a detail in place of the answer.
+- **`actions`** are promoted to a "Common" group on the Actions tab, _and_ keep their place in their classification group, so promoting an operation never makes it harder to find.
+
+Every operation and column name is checked against the generated catalog by `src/generic/profiles.test.ts`, so a typo — or a botocore model that renamed a member — fails the gate instead of quietly rendering an always-empty column. Services with no profile are unchanged.
+
+Today: Lambda, Step Functions, Kinesis, Secrets Manager and Systems Manager.
 
 ## Development
 
@@ -80,7 +105,7 @@ Athena opens on a hand-built query editor rather than the generated tabs (which 
 
 ## Status
 
-Structural foundation landed: Cloudscape shell, endpoint switcher with capability discovery, catalog codegen, and the generic Resources/Actions layer — which lights up every catalogued service at once. Four hand-built screens sit on top of it: Athena, Glue, Firehose and S3. SQS, EventBridge and DynamoDB are next.
+Structural foundation landed: Cloudscape shell, endpoint switcher with capability discovery, catalog codegen, and the generic Resources/Actions layer — which lights up every catalogued service at once. Seven hand-built screens sit on top of it: Athena, Glue, Firehose, S3, SQS, EventBridge and DynamoDB. Five more services — Lambda, Step Functions, Kinesis, Secrets Manager and Systems Manager — are curated through [service profiles](#service-profiles). IAM, SNS, CloudWatch Logs and KMS are next.
 
 The design spec is [`docs/specs/2026-08-21-glaux-console-design.md`](docs/specs/2026-08-21-glaux-console-design.md); [`SERVICES.yaml`](SERVICES.yaml) is the work queue a daily agent works through, a few entries at a time, one PR per day.
 

@@ -7,8 +7,12 @@
 #   status: pending | in_progress | done
 #   tier:   structural  - repo/shell/infrastructure work, not a service
 #           deep        - hand-built screen (see the spec's "Hand-built screens")
-#           generic     - nav entry, icon, list-column overrides, smoke test on top
-#                         of the generated catalog layer
+#           generic     - nav entry, list-column overrides, smoke test on top
+#                         of the generated catalog layer. Since run 4 these
+#                         overrides live in src/generic/profiles.ts as a
+#                         "service profile": promoted read and action
+#                         operations, curated columns, and whether a read
+#                         describes one thing or lists many.
 #
 # Services not listed here still work through the generic catalog layer once the
 # structural run lands; listing one only means it gets deliberate attention.
@@ -156,26 +160,57 @@ queue:
 
   - id: lambda
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: opens on ListFunctions with name, runtime, package type, memory,
+      timeout, state, last modified and version; event source mappings, layers
+      and versions curated too. GetFunctionConfiguration renders as a result
+      rather than a table of its Layers. Invoke, CreateFunction and
+      UpdateFunctionCode/Configuration promoted on Actions.
+    deferred: >
+      "Recorded invocations via introspection" — no target implements an
+      invocation-introspection endpoint that this run could verify against, and
+      the Lambda service model has no operation for it. Not invented.
     notes: Functions list, config, invoke with payload, recorded invocations via introspection.
 
   - id: stepfunctions
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: state machines, executions (name, status, start/stop), and
+      GetExecutionHistory as the event spine — id, type, timestamp and
+      previous event id, with the per-type detail structures in the raw
+      response. StartExecution/StopExecution promoted on Actions.
     notes: State machines, executions, execution history.
 
   - id: kinesis
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: streams, shard list, and GetRecords with sequence number,
+      partition key, arrival time and data. GetShardIterator is promoted next
+      to GetRecords because reading records needs both. PutRecord/PutRecords,
+      SplitShard and MergeShards promoted on Actions.
     notes: Streams, shards, put/get records.
 
   - id: secretsmanager
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: secrets with rotation state and change/access dates, and version
+      ids. GetSecretValue and DescribeSecret render as results rather than
+      tables of VersionStages and ExternalSecretRotationMetadata.
+      CreateSecret/PutSecretValue/RotateSecret promoted on Actions.
 
   - id: ssm
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: Parameter Store (DescribeParameters, GetParametersByPath,
+      GetParameter), documents, Run Command (ListCommands,
+      ListCommandInvocations) and instance information — seven curated views
+      out of 152 modelled operations. PutParameter and SendCommand promoted
+      on Actions.
 
   - id: iam
     tier: generic
