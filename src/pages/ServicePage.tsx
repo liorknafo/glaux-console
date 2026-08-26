@@ -106,15 +106,18 @@ export function ServicePage() {
           <Tabs
             tabs={[
               ...(deep ? [{ id: deep.id, label: deep.label, content: deep.render(catalog) }] : []),
+              // Keyed by service so moving between services starts each tab
+              // fresh — a selection or a result left over from the previous
+              // service's model has no meaning in this one's.
               {
                 id: 'resources',
                 label: 'Resources',
-                content: <ResourcesTab catalog={catalog} />,
+                content: <ResourcesTab key={catalog.id} catalog={catalog} />,
               },
               {
                 id: 'actions',
                 label: 'Actions',
-                content: <ActionsTab catalog={catalog} />,
+                content: <ActionsTab key={catalog.id} catalog={catalog} />,
               },
             ]}
           />

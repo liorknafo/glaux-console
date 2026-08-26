@@ -17,12 +17,17 @@ import { DestructiveConfirm } from './DestructiveConfirm';
 import { destructiveIdentifier } from './destructive';
 import { GeneratedForm } from './GeneratedForm';
 import { OperationResult } from './OperationResult';
+import { profileFor } from './profiles';
 import { ViewAsCli } from './ViewAsCli';
 
 /**
  * The Actions tab: every operation that is not a plain read, rendered as a
  * generated form with a raw-JSON escape hatch, the equivalent CLI command, and
  * a typed-name confirmation for destructive operations.
+ *
+ * A service with a profile (`./profiles.ts`) lists that profile's operations
+ * first, under "Common"; every other operation stays exactly where it was, in
+ * its classification group.
  */
 
 const ACTION_GROUPS: { label: string; classifications: Operation['classification'][] }[] = [
@@ -34,6 +39,7 @@ const ACTION_GROUPS: { label: string; classifications: Operation['classification
 
 export function ActionsTab({ catalog }: { catalog: ServiceCatalog }) {
   const { active } = useEndpoints();
+  const profile = profileFor(catalog.id);
   const [showReads, setShowReads] = useState(false);
   const [rawJson, setRawJson] = useState(false);
   const [rawText, setRawText] = useState('{}');
@@ -46,17 +52,38 @@ export function ActionsTab({ catalog }: { catalog: ServiceCatalog }) {
   const [confirming, setConfirming] = useState(false);
 
   const options = useMemo<SelectProps.Options>(() => {
-    const groups = ACTION_GROUPS.map(group => ({
-      label: group.label,
-      options: Object.values(catalog.operations)
-        .filter(operation => group.classifications.includes(operation.classification))
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(operation => ({
-          label: operation.name,
-          value: operation.name,
-          description: operation.doc,
-        })),
-    })).filter(group => group.options.length > 0);
+    // A profile's operations appear under "Common" *and* keep their place in
+    // their classification group: promoting one must not make it unfindable
+    // for someone scanning the Delete group for it.
+    const featured = (profile?.actions ?? [])
+      .map(name => catalog.operations[name])
+      .filter((operation): operation is Operation => operation !== undefined);
+
+    const groups = [
+      ...(featured.length > 0
+        ? [
+            {
+              label: 'Common',
+              options: featured.map(operation => ({
+                label: operation.name,
+                value: operation.name,
+                description: operation.doc,
+              })),
+            },
+          ]
+        : []),
+      ...ACTION_GROUPS.map(group => ({
+        label: group.label,
+        options: Object.values(catalog.operations)
+          .filter(operation => group.classifications.includes(operation.classification))
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map(operation => ({
+            label: operation.name,
+            value: operation.name,
+            description: operation.doc,
+          })),
+      })),
+    ].filter(group => group.options.length > 0);
 
     if (!showReads) return groups;
     const reads = Object.values(catalog.operations)
@@ -73,7 +100,7 @@ export function ActionsTab({ catalog }: { catalog: ServiceCatalog }) {
         })),
       },
     ];
-  }, [catalog, showReads]);
+  }, [catalog, profile, showReads]);
 
   const operation = selectedName ? catalog.operations[selectedName] : undefined;
   const destructive = operation?.classification === 'delete';

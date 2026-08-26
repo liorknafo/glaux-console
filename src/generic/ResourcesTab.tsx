@@ -7,7 +7,7 @@ import ExpandableSection from '@cloudscape-design/components/expandable-section'
 import FormField from '@cloudscape-design/components/form-field';
 import Header from '@cloudscape-design/components/header';
 import Pagination from '@cloudscape-design/components/pagination';
-import Select from '@cloudscape-design/components/select';
+import Select, { type SelectProps } from '@cloudscape-design/components/select';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Table from '@cloudscape-design/components/table';
 import type { Operation, ServiceCatalog } from '../catalog/types';
@@ -16,6 +16,7 @@ import { useEndpoints } from '../endpoints/context';
 import { GeneratedForm } from './GeneratedForm';
 import { inferResultShape, readCollection, renderCell, type ResultShape } from './columns';
 import { OperationResult } from './OperationResult';
+import { preferredColumns, profileFor, rendersRawResult } from './profiles';
 import { ViewAsCli } from './ViewAsCli';
 
 /**
@@ -24,6 +25,11 @@ import { ViewAsCli } from './ViewAsCli';
  * Columns are inferred from the operation's output shape and pagination is
  * wired to the operation's own token fields, so paging is the service's real
  * pagination rather than client-side slicing.
+ *
+ * A service with a profile (`./profiles.ts`) opens on that profile's first
+ * resource view and gets its curated columns; a service without one behaves
+ * exactly as before, which is what keeps the catalog layer the floor for all
+ * ~56 catalogued services rather than only the curated few.
  */
 
 interface Page {
@@ -33,7 +39,13 @@ interface Page {
 
 export function ResourcesTab({ catalog }: { catalog: ServiceCatalog }) {
   const { active } = useEndpoints();
-  const [selectedName, setSelectedName] = useState<string>();
+  const profile = profileFor(catalog.id);
+  // The picker opens on the profile's first view rather than empty. Nothing is
+  // requested until the user runs it — preselecting chooses what to show, not
+  // what to send.
+  const [selectedName, setSelectedName] = useState<string | undefined>(
+    () => profile?.resources.find(view => catalog.operations[view.operation])?.operation,
+  );
   const [input, setInput] = useState<Record<string, unknown>>({});
   const [pages, setPages] = useState<Page[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
@@ -49,11 +61,34 @@ export function ResourcesTab({ catalog }: { catalog: ServiceCatalog }) {
     [catalog],
   );
 
+  const options = useMemo<SelectProps.Options>(() => {
+    const toOption = (candidate: Operation) => ({
+      label: candidate.name,
+      value: candidate.name,
+      description: candidate.doc,
+    });
+    const featured = (profile?.resources ?? [])
+      .map(view => catalog.operations[view.operation])
+      .filter((candidate): candidate is Operation => candidate !== undefined);
+    const featuredNames = new Set(featured.map(candidate => candidate.name));
+    const rest = readOperations.filter(candidate => !featuredNames.has(candidate.name));
+    if (featured.length === 0) return rest.map(toOption);
+    return [
+      { label: 'Common', options: featured.map(toOption) },
+      { label: 'All read operations', options: rest.map(toOption) },
+    ];
+  }, [catalog, profile, readOperations]);
+
   const operation = selectedName ? catalog.operations[selectedName] : undefined;
   const resultShape: ResultShape | undefined = useMemo(
     () =>
-      operation
-        ? inferResultShape(catalog, operation.output, operation.pagination?.resultKey)
+      operation && !rendersRawResult(catalog.id, operation.name)
+        ? inferResultShape(
+            catalog,
+            operation.output,
+            operation.pagination?.resultKey,
+            preferredColumns(catalog.id, operation.name),
+          )
         : undefined,
     [catalog, operation],
   );
@@ -113,21 +148,25 @@ export function ResourcesTab({ catalog }: { catalog: ServiceCatalog }) {
         header={
           <Header
             variant="h2"
-            description={`${readOperations.length} read operations in the model.`}
+            description={
+              profile?.summary ?? `${readOperations.length} read operations in the model.`
+            }
           >
             Resource view
           </Header>
         }
       >
         <SpaceBetween size="m">
-          <FormField label="Read operation" stretch>
+          <FormField
+            label="Read operation"
+            description={
+              profile ? `${readOperations.length} read operations in the model.` : undefined
+            }
+            stretch
+          >
             <Select
               selectedOption={selectedName ? { label: selectedName, value: selectedName } : null}
-              options={readOperations.map(operationOption => ({
-                label: operationOption.name,
-                value: operationOption.name,
-                description: operationOption.doc,
-              }))}
+              options={options}
               filteringType="auto"
               placeholder="Choose a list or describe operation"
               onChange={event => selectOperation(String(event.detail.selectedOption.value))}

@@ -32,6 +32,7 @@ export function inferResultShape(
   catalog: ServiceCatalog,
   outputShapeName: string | undefined,
   resultKey: string | undefined,
+  preferred?: string[],
 ): ResultShape | undefined {
   const outputShape = outputShapeName ? catalog.shapes[outputShapeName] : undefined;
   if (!outputShape?.members) return undefined;
@@ -49,7 +50,7 @@ export function inferResultShape(
     candidate.shape.member ?? {},
     resolveShape(catalog, candidate.shape.member),
   );
-  return { path: candidate.path, columns: columnsFor(catalog, elementShape) };
+  return { path: candidate.path, columns: columnsFor(catalog, elementShape, preferred) };
 }
 
 function followPath(
@@ -77,11 +78,24 @@ function findFirstList(
   return undefined;
 }
 
-export function columnsFor(catalog: ServiceCatalog, elementShape: Shape): InferredColumn[] {
+/**
+ * `preferred` names the columns a service profile curates for this operation.
+ * When it is given, it replaces inference outright: exactly those members, in
+ * that order. Members the element shape does not declare are dropped rather
+ * than rendered as an always-empty column, so a stale profile shows fewer
+ * columns instead of misleading ones — and `profiles.test.ts` fails the gate
+ * on one either way.
+ */
+export function columnsFor(
+  catalog: ServiceCatalog,
+  elementShape: Shape,
+  preferred?: string[],
+): InferredColumn[] {
   if (elementShape.type !== 'structure' || !elementShape.members) {
     return [{ id: '$value', header: 'Value', scalar: true }];
   }
-  const entries = Object.entries(elementShape.members).map(([name, ref]) => {
+  const members = elementShape.members;
+  const entries = Object.entries(members).map(([name, ref]) => {
     const shape = mergeRef(ref, resolveShape(catalog, ref));
     return {
       id: name,
@@ -89,6 +103,15 @@ export function columnsFor(catalog: ServiceCatalog, elementShape: Shape): Inferr
       scalar: !['structure', 'list', 'map'].includes(shape.type),
     };
   });
+
+  if (preferred?.length) {
+    const byId = new Map(entries.map(entry => [entry.id, entry]));
+    const curated = preferred
+      .map(id => byId.get(id))
+      .filter((entry): entry is InferredColumn => entry !== undefined);
+    if (curated.length > 0) return curated;
+  }
+
   const scalars = entries.filter(entry => entry.scalar).slice(0, MAX_SCALAR_COLUMNS);
   const complex = entries.filter(entry => !entry.scalar);
   return [...scalars, ...complex];
