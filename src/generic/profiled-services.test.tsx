@@ -592,7 +592,9 @@ describe('CloudWatch Logs', () => {
       'Creation time',
       'Arn',
     ]);
-    expect(operationsSent(fetchStub)).toEqual(['DescribeLogGroups']);
+    // Twice: the Tail tab is in front of Resources and lists the groups when it
+    // mounts, and then the Resources tab sends its own read.
+    expect(operationsSent(fetchStub)).toEqual(['DescribeLogGroups', 'DescribeLogGroups']);
   });
 
   it('promotes FilterLogEvents on Actions, which no read picker would offer', async () => {

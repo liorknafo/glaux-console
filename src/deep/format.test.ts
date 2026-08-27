@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatBytes, formatDateTime, formatDuration } from './format';
+import {
+  formatBytes,
+  formatDateTime,
+  formatDuration,
+  formatEpochMillis,
+  formatEpochMillisPrecise,
+} from './format';
 
 describe('formatBytes', () => {
   it('formats byte counts the way the console does', () => {
@@ -40,5 +46,31 @@ describe('formatDateTime', () => {
     expect(formatDateTime('not a date')).toBe('not a date');
     expect(formatDateTime(undefined)).toBe('—');
     expect(formatDateTime('')).toBe('—');
+  });
+});
+
+describe('formatEpochMillis', () => {
+  it('reads a CloudWatch Logs timestamp as milliseconds, not seconds', () => {
+    expect(formatEpochMillis(1_756_029_600_000)).toBe(new Date(1_756_029_600_000).toLocaleString());
+    // The same number through formatDateTime would be read as seconds and land
+    // fifty thousand years out — which is exactly why this function exists.
+    expect(formatEpochMillis(1_756_029_600_000)).not.toBe(formatDateTime(1_756_029_600_000));
+  });
+
+  it('has nothing to show for a missing or non-finite timestamp', () => {
+    expect(formatEpochMillis(undefined)).toBe('—');
+    expect(formatEpochMillis(Number.NaN)).toBe('—');
+    expect(formatEpochMillis(Number.POSITIVE_INFINITY)).toBe('—');
+  });
+});
+
+describe('formatEpochMillisPrecise', () => {
+  it('keeps the milliseconds, which is what separates two log lines', () => {
+    const at = Date.UTC(2026, 7, 27, 10, 0, 0, 42);
+    expect(formatEpochMillisPrecise(at)).toBe(`${new Date(at).toLocaleTimeString()}.042`);
+  });
+
+  it('has nothing to show for a missing timestamp', () => {
+    expect(formatEpochMillisPrecise(undefined)).toBe('—');
   });
 });

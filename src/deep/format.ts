@@ -38,6 +38,29 @@ export function formatDuration(millis: number | undefined): string {
  * arrive here; an unrecognisable value is shown as itself rather than as
  * "Invalid Date".
  */
+/**
+ * A CloudWatch Logs timestamp, which the model declares in **milliseconds**.
+ *
+ * `formatDateTime` reads a bare number as epoch seconds, because that is what
+ * every other JSON-protocol service on this console returns. Logs is the
+ * exception: `timestamp`, `ingestionTime`, `firstEventTimestamp` and the rest
+ * are epoch milliseconds, and passing one through `formatDateTime` would date
+ * it fifty thousand years out.
+ */
+export function formatEpochMillis(value: number | undefined): string {
+  if (value === undefined || !Number.isFinite(value)) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString();
+}
+
+/** The same instant as `formatEpochMillis`, to the millisecond. */
+export function formatEpochMillisPrecise(value: number | undefined): string {
+  if (value === undefined || !Number.isFinite(value)) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return `${date.toLocaleTimeString()}.${String(date.getMilliseconds()).padStart(3, '0')}`;
+}
+
 export function formatDateTime(value: unknown): string {
   if (value === undefined || value === null || value === '') return '—';
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? '—' : value.toLocaleString();

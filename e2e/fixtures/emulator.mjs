@@ -91,6 +91,19 @@ const DELIVERY_STREAM = {
 
 let deliveredCount = 2;
 
+/**
+ * CloudWatch Logs.
+ *
+ * The fixture appends one line every time the console polls. That is the
+ * fixture's own device, not a claim about any emulator: it lets the end-to-end
+ * test watch a *running* tail grow on its own, which is the one thing a
+ * refresh button could not do.
+ */
+const LOG_GROUP = '/glaux/firehose/orders';
+const LOG_STREAM = '2026/08/24/[$LATEST]e2e';
+const logEvents = [];
+let nextLogEvent = 0;
+
 function escapeXml(value) {
   return String(value).replace(
     /[<>&"']/g,
@@ -263,7 +276,7 @@ createServer((req, res) => {
       JSON.stringify({
         status: 'ok',
         version: 'e2e-fixture',
-        services: ['sqs', 'glue', 'athena', 's3', 'firehose'],
+        services: ['sqs', 'glue', 'athena', 's3', 'firehose', 'logs'],
       }),
     );
     return;
@@ -490,6 +503,63 @@ createServer((req, res) => {
             FailedPutCount: 0,
             RequestResponses: records.map((_record, index) => ({ RecordId: `r-${index + 1}` })),
           },
+          JSON_1_1,
+        );
+        return;
+      }
+
+      case 'Logs_20140328.DescribeLogGroups':
+        send(
+          res,
+          200,
+          {
+            logGroups: [
+              {
+                logGroupName: LOG_GROUP,
+                arn: `arn:aws:logs:us-east-1:000000000000:log-group:${LOG_GROUP}:*`,
+                creationTime: 1756000000000,
+                retentionInDays: 7,
+                storedBytes: 8192,
+                logGroupClass: 'STANDARD',
+                metricFilterCount: 0,
+              },
+            ],
+          },
+          JSON_1_1,
+        );
+        return;
+      case 'Logs_20140328.DescribeLogStreams':
+        send(
+          res,
+          200,
+          {
+            logStreams: [
+              {
+                logStreamName: LOG_STREAM,
+                creationTime: 1756000000000,
+                firstEventTimestamp: 1756000001000,
+                lastEventTimestamp: Date.now(),
+                lastIngestionTime: Date.now(),
+              },
+            ],
+          },
+          JSON_1_1,
+        );
+        return;
+      case 'Logs_20140328.FilterLogEvents': {
+        nextLogEvent += 1;
+        logEvents.push({
+          eventId: String(nextLogEvent),
+          logStreamName: LOG_STREAM,
+          timestamp: Date.now(),
+          ingestionTime: Date.now(),
+          message: `delivery ${nextLogEvent} succeeded`,
+        });
+        const startTime = Number(input.startTime ?? 0);
+        send(
+          res,
+          200,
+          { events: logEvents.filter(event => event.timestamp >= startTime) },
           JSON_1_1,
         );
         return;

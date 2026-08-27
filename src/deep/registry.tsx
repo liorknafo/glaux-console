@@ -5,6 +5,7 @@ import { DynamoDbScreen } from './dynamodb/DynamoDbScreen';
 import { EventBridgeScreen } from './eventbridge/EventBridgeScreen';
 import { FirehoseScreen } from './firehose/FirehoseScreen';
 import { GlueScreen } from './glue/GlueScreen';
+import { LogsScreen } from './logs/LogsScreen';
 import { S3Screen } from './s3/S3Screen';
 import { SqsScreen } from './sqs/SqsScreen';
 
@@ -47,6 +48,11 @@ export const deepScreens: Record<string, DeepScreen> = {
     id: 'data-catalog',
     label: 'Data catalog',
     render: catalog => <GlueScreen catalog={catalog} />,
+  },
+  logs: {
+    id: 'tail',
+    label: 'Tail',
+    render: catalog => <LogsScreen catalog={catalog} />,
   },
   s3: {
     id: 'browser',

@@ -48,7 +48,7 @@ test('discovers capabilities and lists queues through the console backend', asyn
   await useFixtureEndpoint(page);
 
   await page.goto('/#/');
-  await expect(page.getByTestId('target-status')).toContainText('5 services running');
+  await expect(page.getByTestId('target-status')).toContainText('6 services running');
   await expect(page.getByTestId('target-status')).toContainText('e2e-fixture');
 
   await page.getByTestId('service-card-sqs').getByText('SQS').click();
@@ -260,4 +260,41 @@ test('shows the redrive policy of a queue that has one', async ({ page }) => {
   // The target ARN resolves to a queue that is actually on this endpoint.
   await page.getByTestId('open-dead-letter-target').click();
   await expect(page.getByTestId('queue-detail')).toContainText('events');
+});
+
+test('follows a log group and keeps reading as the tail runs', async ({ page }) => {
+  await useFixtureEndpoint(page);
+  await page.goto('/#/service/logs');
+
+  await page.getByTestId('open-log-group-/glaux/firehose/orders').click();
+  await expect(page.getByTestId('group-retention')).toContainText('7 days');
+
+  // Nothing is read until the tail is started.
+  await expect(page.getByTestId('tail-empty')).toBeVisible();
+
+  await page.getByTestId('tail-follow').click();
+  const lines = page.getByTestId('tail-table').getByText(/delivery \d+ succeeded/);
+  await expect(lines.first()).toBeVisible();
+
+  // The fixture writes a line per poll, so a running tail — not a refresh — is
+  // what brings the next one. The count rather than a particular line, because
+  // the fixture's counter is shared with the other log test.
+  const first = await lines.count();
+  await expect.poll(() => lines.count(), { timeout: 15_000 }).toBeGreaterThan(first);
+
+  await page.getByTestId('tail-follow').click();
+  await expect(page.getByTestId('tail-follow')).toContainText('Start tailing');
+});
+
+test('narrows the tail to one stream from the stream list', async ({ page }) => {
+  await useFixtureEndpoint(page);
+  await page.goto('/#/service/logs');
+
+  await page.getByTestId('open-log-group-/glaux/firehose/orders').click();
+  await page.getByRole('tab', { name: 'Streams' }).click();
+  await page.getByTestId('tail-stream-2026/08/24/[$LATEST]e2e').click();
+
+  await expect(page.getByTestId('tail-stream')).toContainText('2026/08/24/[$LATEST]e2e');
+  await page.getByTestId('tail-refresh').click();
+  await expect(page.getByTestId('tail-table')).toContainText('succeeded');
 });
