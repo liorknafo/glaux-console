@@ -22,6 +22,10 @@
 # Run 1 (2026-08-22) had no live emulator to probe, so nothing was appended from
 # a health report. The catalogued service list lives in scripts/catalog-services.json
 # (56 services); a later run with a real target should reconcile the two.
+#
+# As of run 6 (2026-08-27) every entry in this file is done. Nothing is queued:
+# the next run has no pending entry to pick up, and new work has to be added
+# here deliberately rather than invented by a run.
 
 queue:
   - id: scaffold
@@ -214,17 +218,51 @@ queue:
 
   - id: iam
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: opens on ListRoles — a role is what a local pipeline references —
+      with the trust-policy document curated out of the table and left in the
+      raw response. Attached and inline role policies, managed policies, users,
+      groups, access keys and instance profiles curated too; GetRole and
+      GetAccountSummary render as results. CreateRole, PutRolePolicy,
+      AttachRolePolicy and the user-authoring actions promoted on Actions.
 
   - id: sns
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: topics, a topic's subscriptions with protocol and endpoint, and
+      all subscriptions on the target. GetTopicAttributes and
+      GetSubscriptionAttributes render as results rather than as a table of some
+      member of the attribute map. Publish, PublishBatch, Subscribe, CreateTopic
+      and the Set*Attributes pair promoted on Actions.
 
   - id: logs
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      A Tail screen in front of the generated tabs: log groups, one group's
+      streams (newest activity first, "tail this stream"), and a tail over the
+      whole group — FilterLogEvents over a window that moves forward from the
+      newest event seen, polled every two seconds, deduplicated on eventId.
+      Profile: DescribeLogGroups and DescribeLogStreams curated,
+      FilterLogEvents promoted on Actions since the model classifies it as
+      neither list nor describe. The e2e fixture serves a log group and appends
+      a line per poll, so Playwright watches a running tail.
+    unverified: >
+      CloudWatch's own live tail (StartLiveTail) is an HTTP/2 event stream that
+      the console's request path does not carry, and no target this run could
+      check implements it. The tail is polled, as `aws logs tail --follow` is,
+      and the screen says so.
     notes: CloudWatch Logs — log groups, streams, tail view.
 
   - id: kms
     tier: generic
-    status: pending
+    status: done
+    landed: >
+      Profile: keys, aliases, grants, key policies, rotation status and
+      rotations. DescribeKey, GetKeyPolicy and GetKeyRotationStatus render as
+      results — ListKeys returns nothing but ids, so DescribeKey is where a
+      key's state, spec and usage actually are. CreateKey, CreateAlias, the
+      Encrypt/Decrypt/GenerateDataKey trio, CreateGrant, EnableKeyRotation and
+      ScheduleKeyDeletion promoted on Actions.
