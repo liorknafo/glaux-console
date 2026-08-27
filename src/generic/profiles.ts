@@ -300,6 +300,244 @@ export const serviceProfiles: Record<string, ServiceProfile> = {
       'DeleteDocument',
     ],
   },
+
+  iam: {
+    summary:
+      'Roles, users, groups and policies. Roles come first because they are what a local pipeline actually references — a Firehose delivery role, a Glue crawler role — while users and access keys are usually incidental on an emulator.',
+    resources: [
+      {
+        operation: 'ListRoles',
+        columns: ['RoleName', 'Path', 'Description', 'MaxSessionDuration', 'CreateDate', 'Arn'],
+      },
+      {
+        operation: 'GetRole',
+        raw: true,
+      },
+      {
+        operation: 'ListAttachedRolePolicies',
+        columns: ['PolicyName', 'PolicyArn'],
+      },
+      {
+        // Inline policies, which IAM returns as a list of names — the document
+        // itself is one GetRolePolicy away.
+        operation: 'ListRolePolicies',
+      },
+      {
+        operation: 'ListPolicies',
+        columns: [
+          'PolicyName',
+          'Path',
+          'AttachmentCount',
+          'IsAttachable',
+          'DefaultVersionId',
+          'CreateDate',
+          'UpdateDate',
+          'Arn',
+        ],
+      },
+      {
+        operation: 'ListUsers',
+        columns: ['UserName', 'Path', 'UserId', 'CreateDate', 'PasswordLastUsed', 'Arn'],
+      },
+      {
+        operation: 'ListGroups',
+        columns: ['GroupName', 'Path', 'GroupId', 'CreateDate', 'Arn'],
+      },
+      {
+        operation: 'ListAccessKeys',
+        columns: ['UserName', 'AccessKeyId', 'Status', 'CreateDate'],
+      },
+      {
+        operation: 'ListInstanceProfiles',
+        columns: ['InstanceProfileName', 'Path', 'InstanceProfileId', 'CreateDate', 'Arn'],
+      },
+      {
+        // SummaryMap is a map of quota counters, not a collection.
+        operation: 'GetAccountSummary',
+        raw: true,
+      },
+    ],
+    actions: [
+      'CreateRole',
+      'PutRolePolicy',
+      'AttachRolePolicy',
+      'CreatePolicy',
+      'CreateUser',
+      'CreateAccessKey',
+      'AddUserToGroup',
+      'DeleteRole',
+    ],
+  },
+
+  sns: {
+    summary:
+      'Topics, their subscriptions, and publishing. A topic carries its configuration in an attribute map rather than in modelled members, so `GetTopicAttributes` is shown in full instead of as a table.',
+    resources: [
+      {
+        // The model's Topic structure has one member, TopicArn, so inference
+        // already produces the only column there is.
+        operation: 'ListTopics',
+      },
+      {
+        operation: 'GetTopicAttributes',
+        raw: true,
+      },
+      {
+        operation: 'ListSubscriptionsByTopic',
+        columns: ['SubscriptionArn', 'Protocol', 'Endpoint', 'Owner', 'TopicArn'],
+      },
+      {
+        operation: 'ListSubscriptions',
+        columns: ['SubscriptionArn', 'Protocol', 'Endpoint', 'Owner', 'TopicArn'],
+      },
+      {
+        operation: 'GetSubscriptionAttributes',
+        raw: true,
+      },
+    ],
+    actions: [
+      'Publish',
+      'PublishBatch',
+      'Subscribe',
+      'CreateTopic',
+      'SetTopicAttributes',
+      'SetSubscriptionAttributes',
+      'Unsubscribe',
+      'DeleteTopic',
+    ],
+  },
+
+  logs: {
+    summary:
+      'Log groups, their streams, and the events in one stream. The Tail tab follows a whole log group instead, across every stream at once.',
+    resources: [
+      {
+        operation: 'DescribeLogGroups',
+        columns: [
+          'logGroupName',
+          'logGroupClass',
+          'retentionInDays',
+          'storedBytes',
+          'metricFilterCount',
+          'creationTime',
+          'arn',
+        ],
+      },
+      {
+        operation: 'DescribeLogStreams',
+        columns: [
+          'logStreamName',
+          'creationTime',
+          'firstEventTimestamp',
+          'lastEventTimestamp',
+          'lastIngestionTime',
+          'arn',
+        ],
+      },
+      {
+        // GetLogEvents pages on nextForwardToken/nextBackwardToken rather than
+        // a modelled paginator, so the columns are curated rather than guessed.
+        operation: 'GetLogEvents',
+        columns: ['timestamp', 'message', 'ingestionTime'],
+      },
+      {
+        operation: 'DescribeSubscriptionFilters',
+        columns: [
+          'filterName',
+          'logGroupName',
+          'filterPattern',
+          'destinationArn',
+          'roleArn',
+          'distribution',
+          'creationTime',
+        ],
+      },
+      {
+        operation: 'DescribeMetricFilters',
+        columns: ['filterName', 'logGroupName', 'filterPattern', 'creationTime'],
+      },
+      {
+        operation: 'DescribeQueries',
+        columns: ['queryId', 'status', 'logGroupName', 'createTime', 'queryString'],
+      },
+    ],
+    actions: [
+      'FilterLogEvents',
+      'PutLogEvents',
+      'CreateLogGroup',
+      'CreateLogStream',
+      'PutRetentionPolicy',
+      'PutSubscriptionFilter',
+      'StartQuery',
+      'DeleteLogGroup',
+    ],
+  },
+
+  kms: {
+    summary:
+      'Keys, their aliases, policies, rotation state and grants. `ListKeys` returns only ids — `DescribeKey` is what carries a key’s state, spec and usage.',
+    resources: [
+      {
+        operation: 'ListKeys',
+        columns: ['KeyId', 'KeyArn'],
+      },
+      {
+        operation: 'DescribeKey',
+        raw: true,
+      },
+      {
+        operation: 'ListAliases',
+        columns: ['AliasName', 'TargetKeyId', 'CreationDate', 'LastUpdatedDate', 'AliasArn'],
+      },
+      {
+        operation: 'GetKeyRotationStatus',
+        raw: true,
+      },
+      {
+        operation: 'ListKeyRotations',
+        columns: [
+          'RotationDate',
+          'RotationType',
+          'KeyMaterialId',
+          'KeyMaterialState',
+          'ImportState',
+          'ExpirationModel',
+        ],
+      },
+      {
+        operation: 'ListKeyPolicies',
+      },
+      {
+        operation: 'GetKeyPolicy',
+        raw: true,
+      },
+      {
+        operation: 'ListGrants',
+        columns: [
+          'GrantId',
+          'Name',
+          'GranteePrincipal',
+          'RetiringPrincipal',
+          'IssuingAccount',
+          'CreationDate',
+        ],
+      },
+      {
+        operation: 'ListResourceTags',
+        columns: ['TagKey', 'TagValue'],
+      },
+    ],
+    actions: [
+      'CreateKey',
+      'CreateAlias',
+      'Encrypt',
+      'Decrypt',
+      'GenerateDataKey',
+      'CreateGrant',
+      'EnableKeyRotation',
+      'ScheduleKeyDeletion',
+    ],
+  },
 };
 
 export function profileFor(serviceId: string): ServiceProfile | undefined {

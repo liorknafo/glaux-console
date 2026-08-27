@@ -41,9 +41,19 @@ function elementShapeOf(catalog: ServiceCatalog, operationName: string): Shape |
 }
 
 describe('service profiles', () => {
-  it('covers this run’s queue entries', () => {
+  it('covers the queue entries that have run so far', () => {
     expect(profileIds.sort()).toEqual(
-      ['kinesis', 'lambda', 'secretsmanager', 'ssm', 'stepfunctions'].sort(),
+      [
+        'iam',
+        'kinesis',
+        'kms',
+        'lambda',
+        'logs',
+        'secretsmanager',
+        'sns',
+        'ssm',
+        'stepfunctions',
+      ].sort(),
     );
   });
 
