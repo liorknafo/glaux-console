@@ -9,13 +9,14 @@ import Spinner from '@cloudscape-design/components/spinner';
 import Tabs from '@cloudscape-design/components/tabs';
 import { findService, loadServiceCatalog } from '../catalog/loader';
 import type { ServiceCatalog } from '../catalog/types';
+import { deepScreenFor } from '../deep/registry';
 import { useEndpoints } from '../endpoints/context';
 import { ActionsTab } from '../generic/ActionsTab';
 import { ResourcesTab } from '../generic/ResourcesTab';
 
 /**
- * A service screen. Today every service gets the generated Resources/Actions
- * pair; the hand-built screens in the queue will mount alongside these tabs.
+ * A service screen. Every service gets the generated Resources/Actions pair;
+ * a service with a hand-built screen gets it as the first tab, in front of them.
  */
 export function ServicePage() {
   const { serviceId = '' } = useParams();
@@ -52,6 +53,7 @@ export function ServicePage() {
   }
 
   const unavailable = isUnavailable(entry.id);
+  const deep = deepScreenFor(entry.id);
 
   return (
     <ContentLayout
@@ -103,6 +105,7 @@ export function ServicePage() {
         {catalog && (
           <Tabs
             tabs={[
+              ...(deep ? [{ id: deep.id, label: deep.label, content: deep.render(catalog) }] : []),
               {
                 id: 'resources',
                 label: 'Resources',
