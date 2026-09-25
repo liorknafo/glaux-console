@@ -124,7 +124,7 @@ export function EndpointsPage() {
                 errorText={error}
                 warningText={
                   !error && url && isLikelyLocal(url) === false && checkEndpointUrl(url).ok
-                    ? 'This does not look like a private or loopback address. Double-check that it is your emulator.'
+                    ? 'This name does not look like a local emulator. The backend resolves it on every request and refuses it if it points outside loopback and private ranges.'
                     : undefined
                 }
                 description="For example http://localhost:4566"
@@ -161,6 +161,18 @@ export function EndpointsPage() {
             <Box variant="code">{REAL_AWS_SUFFIXES.join('  ·  ')}</Box>
             <Box color="text-body-secondary" fontSize="body-s">
               The check runs in the backend, so it holds even if the browser is bypassed.
+            </Box>
+            <Box>
+              A deny list only names what someone thought of, so the destination also has to be on
+              the allow side of a positive rule: a loopback or private address. A hostname is
+              resolved and every address it answers with is checked on every request, so an endpoint
+              that resolved locally when it was added cannot later point the backend somewhere else.
+              To reach an emulator that is not on a local network, an operator sets{' '}
+              <Box variant="code" display="inline">
+                GLAUX_CONSOLE_ALLOW_HOSTS
+              </Box>{' '}
+              on the backend. That override does not reopen the hosts above, or the cloud
+              instance-metadata addresses.
             </Box>
           </SpaceBetween>
         </Container>
