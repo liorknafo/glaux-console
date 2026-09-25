@@ -1,0 +1,285 @@
+{
+  "$comment": "Services the catalog is generated for. `model` is the path under botocore/data. `aliases` are the identifiers a target emulator may report for this service in GET /_fakecloud/health. Add an entry and run `npm run catalog` to light the service up.",
+  "services": [
+    { "id": "athena", "label": "Athena", "category": "Analytics", "model": "athena/2017-05-18" },
+    { "id": "glue", "label": "Glue", "category": "Analytics", "model": "glue/2017-03-31" },
+    {
+      "id": "firehose",
+      "label": "Data Firehose",
+      "category": "Analytics",
+      "model": "firehose/2015-08-04",
+      "aliases": ["kinesisfirehose", "kinesis-firehose"]
+    },
+    { "id": "kinesis", "label": "Kinesis", "category": "Analytics", "model": "kinesis/2013-12-02" },
+    {
+      "id": "opensearch",
+      "label": "OpenSearch Service",
+      "category": "Analytics",
+      "model": "opensearch/2021-01-01"
+    },
+    {
+      "id": "es",
+      "label": "Elasticsearch Service",
+      "category": "Analytics",
+      "model": "es/2015-01-01"
+    },
+    {
+      "id": "emr",
+      "label": "EMR",
+      "category": "Analytics",
+      "model": "emr/2009-03-31",
+      "aliases": ["elasticmapreduce"]
+    },
+    {
+      "id": "redshift",
+      "label": "Redshift",
+      "category": "Analytics",
+      "model": "redshift/2012-12-01"
+    },
+    {
+      "id": "redshift-data",
+      "label": "Redshift Data API",
+      "category": "Analytics",
+      "model": "redshift-data/2019-12-20"
+    },
+    {
+      "id": "timestream-write",
+      "label": "Timestream Write",
+      "category": "Analytics",
+      "model": "timestream-write/2018-11-01"
+    },
+
+    { "id": "s3", "label": "S3", "category": "Storage", "model": "s3/2006-03-01" },
+    {
+      "id": "efs",
+      "label": "EFS",
+      "category": "Storage",
+      "model": "efs/2015-02-01",
+      "aliases": ["elasticfilesystem"]
+    },
+    { "id": "backup", "label": "Backup", "category": "Storage", "model": "backup/2018-11-15" },
+
+    {
+      "id": "dynamodb",
+      "label": "DynamoDB",
+      "category": "Database",
+      "model": "dynamodb/2012-08-10"
+    },
+    {
+      "id": "dynamodbstreams",
+      "label": "DynamoDB Streams",
+      "category": "Database",
+      "model": "dynamodbstreams/2012-08-10",
+      "aliases": ["streams.dynamodb"]
+    },
+    { "id": "rds", "label": "RDS", "category": "Database", "model": "rds/2014-10-31" },
+    {
+      "id": "elasticache",
+      "label": "ElastiCache",
+      "category": "Database",
+      "model": "elasticache/2015-02-02"
+    },
+
+    {
+      "id": "sqs",
+      "label": "SQS",
+      "category": "Application integration",
+      "model": "sqs/2012-11-05"
+    },
+    {
+      "id": "sns",
+      "label": "SNS",
+      "category": "Application integration",
+      "model": "sns/2010-03-31"
+    },
+    {
+      "id": "events",
+      "label": "EventBridge",
+      "category": "Application integration",
+      "model": "events/2015-10-07",
+      "aliases": ["eventbridge", "cloudwatch-events"]
+    },
+    {
+      "id": "scheduler",
+      "label": "EventBridge Scheduler",
+      "category": "Application integration",
+      "model": "scheduler/2021-06-30"
+    },
+    {
+      "id": "stepfunctions",
+      "label": "Step Functions",
+      "category": "Application integration",
+      "model": "stepfunctions/2016-11-23",
+      "aliases": ["states", "sfn"]
+    },
+    {
+      "id": "swf",
+      "label": "Simple Workflow",
+      "category": "Application integration",
+      "model": "swf/2012-01-25"
+    },
+    {
+      "id": "mq",
+      "label": "Amazon MQ",
+      "category": "Application integration",
+      "model": "mq/2017-11-27"
+    },
+    {
+      "id": "appsync",
+      "label": "AppSync",
+      "category": "Application integration",
+      "model": "appsync/2017-07-25"
+    },
+    {
+      "id": "apigateway",
+      "label": "API Gateway",
+      "category": "Application integration",
+      "model": "apigateway/2015-07-09"
+    },
+    {
+      "id": "apigatewayv2",
+      "label": "API Gateway v2",
+      "category": "Application integration",
+      "model": "apigatewayv2/2018-11-29"
+    },
+
+    { "id": "lambda", "label": "Lambda", "category": "Compute", "model": "lambda/2015-03-31" },
+    { "id": "batch", "label": "Batch", "category": "Compute", "model": "batch/2016-08-10" },
+    { "id": "ec2", "label": "EC2", "category": "Compute", "model": "ec2/2016-11-15" },
+    { "id": "ecs", "label": "ECS", "category": "Containers", "model": "ecs/2014-11-13" },
+    { "id": "ecr", "label": "ECR", "category": "Containers", "model": "ecr/2015-09-21" },
+    { "id": "eks", "label": "EKS", "category": "Containers", "model": "eks/2017-11-01" },
+
+    { "id": "iam", "label": "IAM", "category": "Security & identity", "model": "iam/2010-05-08" },
+    { "id": "sts", "label": "STS", "category": "Security & identity", "model": "sts/2011-06-15" },
+    { "id": "kms", "label": "KMS", "category": "Security & identity", "model": "kms/2014-11-01" },
+    {
+      "id": "secretsmanager",
+      "label": "Secrets Manager",
+      "category": "Security & identity",
+      "model": "secretsmanager/2017-10-17"
+    },
+    {
+      "id": "acm",
+      "label": "Certificate Manager",
+      "category": "Security & identity",
+      "model": "acm/2015-12-08"
+    },
+    {
+      "id": "cognito-idp",
+      "label": "Cognito User Pools",
+      "category": "Security & identity",
+      "model": "cognito-idp/2016-04-18"
+    },
+    {
+      "id": "cognito-identity",
+      "label": "Cognito Identity",
+      "category": "Security & identity",
+      "model": "cognito-identity/2014-06-30"
+    },
+    {
+      "id": "organizations",
+      "label": "Organizations",
+      "category": "Security & identity",
+      "model": "organizations/2016-11-28"
+    },
+    {
+      "id": "account",
+      "label": "Account",
+      "category": "Security & identity",
+      "model": "account/2021-02-01"
+    },
+
+    {
+      "id": "logs",
+      "label": "CloudWatch Logs",
+      "category": "Management & governance",
+      "model": "logs/2014-03-28",
+      "aliases": ["cloudwatch-logs"]
+    },
+    {
+      "id": "cloudwatch",
+      "label": "CloudWatch",
+      "category": "Management & governance",
+      "model": "cloudwatch/2010-08-01",
+      "aliases": ["monitoring"]
+    },
+    {
+      "id": "cloudformation",
+      "label": "CloudFormation",
+      "category": "Management & governance",
+      "model": "cloudformation/2010-05-15"
+    },
+    {
+      "id": "cloudtrail",
+      "label": "CloudTrail",
+      "category": "Management & governance",
+      "model": "cloudtrail/2013-11-01"
+    },
+    {
+      "id": "config",
+      "label": "Config",
+      "category": "Management & governance",
+      "model": "config/2014-11-12",
+      "aliases": ["configservice"]
+    },
+    {
+      "id": "ssm",
+      "label": "Systems Manager",
+      "category": "Management & governance",
+      "model": "ssm/2014-11-06"
+    },
+    {
+      "id": "resourcegroupstaggingapi",
+      "label": "Resource Groups Tagging",
+      "category": "Management & governance",
+      "model": "resourcegroupstaggingapi/2017-01-26"
+    },
+    {
+      "id": "xray",
+      "label": "X-Ray",
+      "category": "Management & governance",
+      "model": "xray/2016-04-12"
+    },
+
+    {
+      "id": "route53",
+      "label": "Route 53",
+      "category": "Networking",
+      "model": "route53/2013-04-01"
+    },
+    {
+      "id": "elbv2",
+      "label": "Elastic Load Balancing v2",
+      "category": "Networking",
+      "model": "elbv2/2015-12-01",
+      "aliases": ["elasticloadbalancingv2", "elasticloadbalancing"]
+    },
+    {
+      "id": "cloudfront",
+      "label": "CloudFront",
+      "category": "Networking",
+      "model": "cloudfront/2020-05-31"
+    },
+    {
+      "id": "servicediscovery",
+      "label": "Cloud Map",
+      "category": "Networking",
+      "model": "servicediscovery/2017-03-14"
+    },
+
+    {
+      "id": "ses",
+      "label": "SES",
+      "category": "Business applications",
+      "model": "ses/2010-12-01",
+      "aliases": ["email"]
+    },
+    {
+      "id": "sesv2",
+      "label": "SES v2",
+      "category": "Business applications",
+      "model": "sesv2/2019-09-27"
+    }
+  ]
+}
