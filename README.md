@@ -31,12 +31,26 @@ browser  ──▶  console backend  ──▶  target emulator
              (/api/request)         (http://localhost:4566)
 ```
 
-The browser never talks to the target directly. It builds the wire request from the service catalog and posts a request envelope to the console backend, which attaches a dummy SigV4 signature and forwards it. That removes CORS from the picture, keeps credentials out of the page, and gives one place to refuse real-AWS hosts.
+The browser never talks to the target directly. It builds the wire request from the service catalog and posts a request envelope to the console backend, which attaches a dummy SigV4 signature and forwards it. That removes CORS from the picture, keeps credentials out of the page, and gives one place to decide where a request may go.
+
+### Where the backend will send a request
+
+The backend signs and forwards whatever it is handed, so the destination is decided by a positive rule rather than a deny list alone:
+
+1. Real-AWS hosts (`*.amazonaws.com` and the rest of the list) are refused. Full CRUD against a production account is designed out.
+2. Cloud instance-metadata addresses — `169.254.0.0/16`, `fe80::/10`, `fd00:ec2::254`, `metadata.google.internal`, `100.100.100.200` — are refused, so the backend cannot be used to read instance credentials.
+3. Everything else must be **local**: loopback (`127.0.0.0/8`, `::1`), the RFC 1918 ranges, or unique-local IPv6 (`fc00::/7`). A hostname is resolved and _every_ address it answers with is checked, on every request — so an endpoint that resolved locally when it was added cannot later point the backend at something else.
+
+Set `GLAUX_CONSOLE_ALLOW_HOSTS` (comma-separated hosts) to target an emulator that is not on a local network. It relaxes rule 3 only; rules 1 and 2 are not overridable.
+
+```bash
+GLAUX_CONSOLE_ALLOW_HOSTS=emulator.lab.example npm run serve
+```
 
 - **`src/catalog/`** — the generated service catalog: 56 services, ~4,700 operations, one lazily-loaded chunk per service. Generated from [botocore](https://github.com/boto/botocore)'s public service models by `npm run catalog`, committed so regeneration is a reviewable diff, and pinned by snapshot tests.
 - **`src/protocol/`** — request serialization and response parsing for the `json`, `rest-json`, `query`, `ec2`, and `rest-xml` wire protocols, plus the "View as CLI" renderer.
 - **`src/generic/`** — the Resources tab (list/describe → Cloudscape tables with the service's own pagination) and Actions tab (generated forms, raw-JSON escape hatch, destructive-action guard).
-- **`server/`** — the standalone backend: static assets, `/api/request`, SigV4, and the real-AWS refusal. The embedded deployment (glaux mounting the assets at `/console`) implements the same contract.
+- **`server/`** — the standalone backend: static assets, `/api/request`, SigV4, and the destination rules above. The embedded deployment (glaux mounting the assets at `/console`) implements the same contract.
 
 ## Adding a service
 

@@ -1,4 +1,11 @@
-import { checkEndpoint, REAL_AWS_SUFFIXES, REFUSAL_MESSAGE } from './endpoint-safety.mjs';
+import {
+  ALLOW_HOSTS_ENV,
+  checkEndpoint,
+  operatorAllowedHosts,
+  REAL_AWS_SUFFIXES,
+  REFUSAL_MESSAGE,
+  resolveLocalDestination,
+} from './endpoint-safety.mjs';
 import { signRequest } from './sigv4.mjs';
 
 /**
@@ -23,7 +30,7 @@ const REQUEST_TIMEOUT_MS = 60_000;
 /** Response bodies that are safe to hand back as text rather than base64. */
 const TEXTUAL = /^(text\/|application\/(json|xml|x-amz-json|x-www-form-urlencoded))/i;
 
-export function createProxyHandler({ fetchImpl = globalThis.fetch } = {}) {
+export function createProxyHandler({ fetchImpl = globalThis.fetch, lookupImpl } = {}) {
   return async function handle(req, res, next) {
     const url = new URL(req.url ?? '/', 'http://console.local');
 
@@ -31,6 +38,8 @@ export function createProxyHandler({ fetchImpl = globalThis.fetch } = {}) {
       return json(res, 200, {
         refusedHostSuffixes: REAL_AWS_SUFFIXES,
         refusalMessage: REFUSAL_MESSAGE,
+        allowedNonLocalHosts: operatorAllowedHosts(),
+        allowHostsEnvVar: ALLOW_HOSTS_ENV,
       });
     }
 
@@ -53,6 +62,18 @@ export function createProxyHandler({ fetchImpl = globalThis.fetch } = {}) {
     const safety = checkEndpoint(envelope.endpoint ?? '');
     if (!safety.ok) {
       return json(res, 403, { message: safety.reason, refused: true });
+    }
+
+    // The host passed the rules that can be decided from the string. A name
+    // still has to be resolved and checked before anything is sent to it, and
+    // that happens per request rather than once when the endpoint was stored.
+    const destination = await resolveLocalDestination(safety.url, { lookupImpl });
+    if (!destination.ok) {
+      return json(res, destination.unreachable ? 502 : 403, {
+        message: destination.reason,
+        refused: !destination.unreachable,
+        unreachable: destination.unreachable ?? undefined,
+      });
     }
 
     const targetUrl = buildTargetUrl(safety.url, envelope);
