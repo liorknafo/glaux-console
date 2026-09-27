@@ -154,6 +154,35 @@ describe('local-only destinations', () => {
     ).toMatchObject({ ok: false, reason: METADATA_REFUSAL_MESSAGE });
   });
 
+  it('refuses the metadata addresses however they are spelled', () => {
+    // isLocalAddress also judges what a resolver answered, and nothing
+    // guarantees the spelling there the way WHATWG URL parsing does for a host
+    // typed into the form. A string comparison against "fd00:ec2::254" let
+    // these through as ordinary unique-local addresses.
+    for (const address of [
+      'fd00:ec2::254',
+      'fd00:ec2:0:0:0:0:0:254',
+      'FD00:EC2::254',
+      'fd00:0ec2::254',
+      'fd00:ec2::0254',
+      'fe80::1',
+      'fe80:0:0:0:0:0:0:1',
+      '169.254.169.254',
+      '169.254.170.2',
+    ]) {
+      expect(isLocalAddress(address), address).toBe(false);
+    }
+  });
+
+  it('refuses a name that resolves to the EC2 IPv6 metadata address', async () => {
+    const lookupImpl = async () => [{ address: 'fd00:ec2:0:0:0:0:0:254', family: 6 }];
+    const result = await resolveLocalDestination(new URL('http://emulator.test:4566'), {
+      lookupImpl,
+      env: {},
+    });
+    expect(result.ok).toBe(false);
+  });
+
   it('classifies addresses, not names', () => {
     expect(isLocalAddress('127.0.0.1')).toBe(true);
     expect(isLocalAddress('::1')).toBe(true);

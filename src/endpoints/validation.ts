@@ -35,15 +35,24 @@ function stripBrackets(host: string): string {
   return host.replace(/^\[|\]$/g, '');
 }
 
+/** The EC2 IPv6 instance-metadata address, fd00:ec2::254, as its eight groups. */
+const EC2_IPV6_METADATA: number[] = [0xfd00, 0x0ec2, 0, 0, 0, 0, 0, 0x254];
+
 /**
  * Link-local ranges: IPv4 169.254.0.0/16 (which carries the EC2/Azure metadata
- * service) and IPv6 fe80::/10 plus the EC2 IPv6 metadata address.
+ * service) and IPv6 fe80::/10 plus the EC2 IPv6 metadata address, compared as
+ * parsed addresses rather than as text so that a non-canonical spelling such as
+ * fd00:ec2:0:0:0:0:0:254 cannot pass as an ordinary unique-local address. The
+ * backend makes the same comparison the same way.
  */
 function isLinkLocal(host: string): boolean {
   const bare = stripBrackets(host);
-  if (/^169\.254\.\d{1,3}\.\d{1,3}$/.test(bare)) return true;
-  if (/^fe[89ab][0-9a-f]:/i.test(bare)) return true;
-  return bare === 'fd00:ec2::254';
+  const octets = parseIpv4(bare);
+  if (octets) return octets[0] === 169 && octets[1] === 254;
+  const groups = parseIpv6(bare);
+  if (!groups) return false;
+  if ((groups[0] & 0xffc0) === 0xfe80) return true;
+  return groups.every((group, index) => group === EC2_IPV6_METADATA[index]);
 }
 
 function parseIpv4(host: string): number[] | null {

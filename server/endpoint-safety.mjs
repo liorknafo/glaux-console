@@ -39,16 +39,30 @@ export function rebindRefusalMessage(host, address) {
   );
 }
 
+/** The EC2 IPv6 instance-metadata address, fd00:ec2::254, as its eight groups. */
+const EC2_IPV6_METADATA = [0xfd00, 0x0ec2, 0, 0, 0, 0, 0, 0x254];
+
 /**
  * Link-local ranges: IPv4 169.254.0.0/16 (which carries the EC2/Azure metadata
  * service) and IPv6 fe80::/10 plus the EC2 IPv6 metadata address.
+ *
+ * These are compared as parsed addresses, not as text. A host reaching
+ * `checkEndpoint` has been through WHATWG URL parsing and is already in
+ * canonical form, but `isLocalAddress` also judges addresses a DNS resolver
+ * returned, where nothing guarantees the spelling. Matching "fd00:ec2::254" as
+ * a string let fd00:ec2:0:0:0:0:0:254, fd00:0ec2::254 and fd00:ec2::0254
+ * through as ordinary unique-local addresses — that is, a name resolving to the
+ * EC2 metadata service would have been treated as a local target and
+ * forwarded, which is the exfiltration route this deny list exists to close.
  */
 function isLinkLocal(host) {
   const bare = stripBrackets(host);
-  if (/^169\.254\.\d{1,3}\.\d{1,3}$/.test(bare)) return true;
-  if (/^fe[89ab][0-9a-f]:/i.test(bare)) return true;
-  if (bare === 'fd00:ec2::254') return true;
-  return false;
+  const octets = parseIpv4(bare);
+  if (octets) return octets[0] === 169 && octets[1] === 254;
+  const groups = parseIpv6(bare);
+  if (!groups) return false;
+  if ((groups[0] & 0xffc0) === 0xfe80) return true;
+  return groups.every((group, index) => group === EC2_IPV6_METADATA[index]);
 }
 
 function stripBrackets(host) {
