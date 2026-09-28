@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   checkEndpointUrl,
+  classifyHost,
   isLikelyLocal,
   METADATA_REFUSAL_MESSAGE,
   REFUSAL_MESSAGE,
@@ -17,6 +18,50 @@ describe('endpoint validation', () => {
     ]) {
       expect(checkEndpointUrl(url), url).toEqual({ ok: true, url: url.replace(/\/$/, '') });
     }
+  });
+
+  it('refuses a literal address outside the local ranges, as the backend does', () => {
+    // The form cannot resolve a name, so it mirrors only the half of the
+    // local-only rule that a string can decide. The backend decides the rest.
+    for (const url of [
+      'http://93.184.216.34:4566',
+      'http://8.8.8.8',
+      'http://172.32.0.1:4566',
+      'http://100.64.0.1:4566',
+      'http://[2606:4700:4700::1111]:4566',
+      'http://[::ffff:93.184.216.34]:4566',
+    ]) {
+      const result = checkEndpointUrl(url);
+      expect(result.ok, url).toBe(false);
+      expect(result.ok === false && result.reason, url).toMatch(/not a local address/);
+    }
+  });
+
+  it('refuses the metadata addresses however they are spelled', () => {
+    // Compared as parsed addresses, not as text: a string match on
+    // "fd00:ec2::254" passed the other spellings off as unique-local.
+    const urls = [
+      'http://[fd00:ec2::254]:4566',
+      'http://[fd00:ec2:0:0:0:0:0:254]:4566',
+      'http://[fd00:0ec2::254]:4566',
+      'http://[fd00:ec2::0254]:4566',
+      'http://[fe80::1]:4566',
+      'http://169.254.169.254:4566',
+    ];
+    for (const url of urls) {
+      const result = checkEndpointUrl(url);
+      expect(result.ok, url).toBe(false);
+      expect(result.ok === false && result.reason, url).toBe(METADATA_REFUSAL_MESSAGE);
+    }
+  });
+
+  it('sorts hosts the same way the backend does', () => {
+    expect(classifyHost('127.0.0.1')).toBe('local');
+    expect(classifyHost('localhost')).toBe('local');
+    expect(classifyHost('glaux.localhost')).toBe('local');
+    expect(classifyHost('10.0.0.5')).toBe('local');
+    expect(classifyHost('93.184.216.34')).toBe('remote');
+    expect(classifyHost('emulator.internal')).toBe('name');
   });
 
   it('refuses real AWS hosts by design, not by warning', () => {

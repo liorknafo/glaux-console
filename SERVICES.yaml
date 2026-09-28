@@ -40,7 +40,10 @@ queue:
       Endpoint model in browser storage, top-bar switcher, /api/request backend
       proxy with dummy SigV4, real-AWS host refusal enforced in the backend and
       mirrored in the form, capability discovery via /_fakecloud/health cached
-      per endpoint with unavailable services badged in the nav.
+      per endpoint with unavailable services badged in the nav. Destinations are
+      allow-listed to loopback and private ranges rather than only deny-listed,
+      with hostnames re-resolved and checked on every request and an operator
+      override via GLAUX_CONSOLE_ALLOW_HOSTS.
     notes: >
       Endpoint model + switcher UI; default target is the origin serving the
       console. Backend proxy path (browser -> console backend -> emulator) with

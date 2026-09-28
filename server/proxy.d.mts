@@ -1,3 +1,4 @@
+import type { LookupAddress } from 'node:dns';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 /**
@@ -6,4 +7,9 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
  */
 export declare function createProxyHandler(options?: {
   fetchImpl?: typeof fetch;
+  /** Overrides the DNS lookup the local-only destination check runs. Tests only. */
+  lookupImpl?: (
+    hostname: string,
+    options: { all: true; verbatim: true },
+  ) => Promise<LookupAddress[]>;
 }): (req: IncomingMessage, res: ServerResponse, next?: () => void) => Promise<void>;
