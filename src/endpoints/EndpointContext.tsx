@@ -1,0 +1,105 @@
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { discoverCapabilities, type Capabilities } from '../api/health';
+import { EndpointContext } from './context';
+import {
+  defaultEndpoint,
+  loadActiveEndpointId,
+  loadEndpoints,
+  saveActiveEndpointId,
+  saveEndpoints,
+  type EndpointConfig,
+} from './store';
+
+export function EndpointProvider({
+  children,
+  origin = window.location.origin,
+}: {
+  children: ReactNode;
+  origin?: string;
+}) {
+  const [endpoints, setEndpoints] = useState<EndpointConfig[]>(() => loadEndpoints(origin));
+  const [activeId, setActiveId] = useState<string>(
+    () => loadActiveEndpointId() ?? loadEndpoints(origin)[0]?.id ?? 'origin',
+  );
+  const [discovered, setDiscovered] = useState<{ key: string; value: Capabilities }>();
+  const [nonce, setNonce] = useState(0);
+
+  const active = useMemo(
+    () => endpoints.find(entry => entry.id === activeId) ?? endpoints[0] ?? defaultEndpoint(origin),
+    [endpoints, activeId, origin],
+  );
+
+  // Discovery results are cached per endpoint; the nonce is how "re-check"
+  // asks for a fresh probe. Deriving `capabilities` from the key means
+  // switching endpoints shows "loading" without resetting state in the effect.
+  const discoveryKey = `${active.url}|${active.region}|${nonce}`;
+  const capabilities: Capabilities | 'loading' =
+    discovered?.key === discoveryKey ? discovered.value : 'loading';
+
+  useEffect(() => {
+    const controller = new AbortController();
+    discoverCapabilities(active, controller.signal).then(value => {
+      if (!controller.signal.aborted) setDiscovered({ key: discoveryKey, value });
+    });
+    return () => controller.abort();
+  }, [active, discoveryKey]);
+
+  const select = useCallback((id: string) => {
+    setActiveId(id);
+    saveActiveEndpointId(id);
+  }, []);
+
+  // State updaters stay pure: React may replay them (StrictMode does so in
+  // development), which would double-write browser storage and queue nested
+  // updates. The next value is computed here and the side effects run once.
+  const upsert = useCallback(
+    (endpoint: EndpointConfig) => {
+      const index = endpoints.findIndex(entry => entry.id === endpoint.id);
+      const next =
+        index === -1
+          ? [...endpoints, endpoint]
+          : endpoints.map(entry => (entry.id === endpoint.id ? endpoint : entry));
+      setEndpoints(next);
+      saveEndpoints(next);
+    },
+    [endpoints],
+  );
+
+  const remove = useCallback(
+    (id: string) => {
+      const remaining = endpoints.filter(entry => entry.id !== id);
+      const next = remaining.length ? remaining : [defaultEndpoint(origin)];
+      setEndpoints(next);
+      saveEndpoints(next);
+      if (id === activeId) {
+        setActiveId(next[0].id);
+        saveActiveEndpointId(next[0].id);
+      }
+    },
+    [endpoints, activeId, origin],
+  );
+
+  const isUnavailable = useCallback(
+    (serviceId: string) =>
+      capabilities !== 'loading' &&
+      capabilities.state === 'known' &&
+      !capabilities.report.supported.has(serviceId),
+    [capabilities],
+  );
+
+  const value = useMemo(
+    () => ({
+      endpoints,
+      active,
+      capabilities,
+      select,
+      upsert,
+      remove,
+      refreshCapabilities: () => setNonce(n => n + 1),
+      isUnavailable,
+    }),
+    [endpoints, active, capabilities, select, upsert, remove, isUnavailable],
+  );
+
+  return <EndpointContext.Provider value={value}>{children}</EndpointContext.Provider>;
+}
