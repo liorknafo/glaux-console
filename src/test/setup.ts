@@ -1,5 +1,5 @@
-import { configure } from '@testing-library/dom';
 import '@testing-library/jest-dom/vitest';
+import { configure } from '@testing-library/dom';
 
 /**
  * `findBy*` waits on the runner's speed, not on the assertion.
@@ -10,7 +10,9 @@ import '@testing-library/jest-dom/vitest';
  * testing-library's 1 s default, so a `findBy*` on a cold module cache fails
  * for want of time while the element it wants is on its way. That made the
  * Glue catalog-failure test pass only when an earlier test in its file had
- * already warmed the cache, and fail on a loaded CI runner.
+ * already warmed the cache, and fail on a loaded CI runner. This branch's own
+ * screens load the same chunks through the same shell, so they race the same
+ * way; 5 s was this file's earlier answer to it and was not enough cold.
  *
  * This is the same call vitest's own `testTimeout` already makes in
  * `vite.config.ts`, for the same reason: the budget matches the runner, and a

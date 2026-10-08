@@ -22,6 +22,16 @@ const queues = new Map([
   ['events', 'http://127.0.0.1:4610/000000000000/events'],
 ]);
 
+/**
+ * Queue URL -> the messages on it.
+ *
+ * A peek is a `ReceiveMessage` with a zero visibility timeout, so the fixture
+ * leaves the message where it is and only counts the receive — which is what
+ * makes the "sent it, then peeked it back twice" test meaningful.
+ */
+const messages = new Map();
+let nextMessage = 0;
+
 /** QueryExecutionId -> the statement the console submitted. */
 const executions = new Map();
 let nextExecution = 0;
@@ -303,6 +313,79 @@ createServer((req, res) => {
         send(res, 200, { QueueUrl: url });
         return;
       }
+      case 'AmazonSQS.GetQueueAttributes': {
+        const name = String(input.QueueUrl ?? '').split('/').pop(); // prettier-ignore
+        const onQueue = messages.get(input.QueueUrl) ?? [];
+        send(res, 200, {
+          Attributes: {
+            QueueArn: `arn:aws:sqs:us-east-1:000000000000:${name}`,
+            ApproximateNumberOfMessages: String(onQueue.length),
+            ApproximateNumberOfMessagesNotVisible: '0',
+            ApproximateNumberOfMessagesDelayed: '0',
+            VisibilityTimeout: '30',
+            MessageRetentionPeriod: '345600',
+            MaximumMessageSize: '262144',
+            DelaySeconds: '0',
+            ReceiveMessageWaitTimeSeconds: '0',
+            CreatedTimestamp: '1756080000',
+            ...(name === 'orders'
+              ? {
+                  RedrivePolicy: JSON.stringify({
+                    deadLetterTargetArn: 'arn:aws:sqs:us-east-1:000000000000:events',
+                    maxReceiveCount: 5,
+                  }),
+                }
+              : {}),
+          },
+        });
+        return;
+      }
+      case 'AmazonSQS.SendMessage': {
+        nextMessage += 1;
+        const id = `fixture-${nextMessage}`;
+        const onQueue = messages.get(input.QueueUrl) ?? [];
+        onQueue.push({
+          MessageId: id,
+          ReceiptHandle: `handle-${id}`,
+          Body: input.MessageBody ?? '',
+          MD5OfBody: 'fixture',
+          receives: 0,
+        });
+        messages.set(input.QueueUrl, onQueue);
+        send(res, 200, { MessageId: id, MD5OfMessageBody: 'fixture' });
+        return;
+      }
+      case 'AmazonSQS.ReceiveMessage': {
+        const onQueue = messages.get(input.QueueUrl) ?? [];
+        const taken = onQueue.slice(0, input.MaxNumberOfMessages ?? 1);
+        // VisibilityTimeout 0 is a peek: the message stays on the queue, and
+        // only its receive count moves.
+        const hides = (input.VisibilityTimeout ?? 30) > 0;
+        if (hides) messages.set(input.QueueUrl, onQueue.slice(taken.length));
+        send(res, 200, {
+          Messages: taken.map(message => {
+            message.receives += 1;
+            return {
+              MessageId: message.MessageId,
+              ReceiptHandle: message.ReceiptHandle,
+              Body: message.Body,
+              MD5OfBody: message.MD5OfBody,
+              Attributes: {
+                SentTimestamp: '1756080000000',
+                ApproximateReceiveCount: String(message.receives),
+              },
+            };
+          }),
+        });
+        return;
+      }
+      case 'AmazonSQS.PurgeQueue':
+        messages.set(input.QueueUrl, []);
+        send(res, 200, {});
+        return;
+      case 'AmazonSQS.ListDeadLetterSourceQueues':
+        send(res, 200, { queueUrls: [] });
+        return;
       case 'AWSGlue.GetDatabases':
         send(res, 200, { DatabaseList: [{ Name: 'analytics', Description: 'fixture' }] }, JSON_1_1);
         return;
