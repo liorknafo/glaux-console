@@ -82,7 +82,20 @@ queue:
 
   - id: athena
     tier: deep
-    status: pending
+    status: done
+    landed: >
+      Hand-built query editor mounted as the first tab on the Athena service
+      screen: Cloudscape CodeEditor over a lazily-loaded Ace with SQL mode,
+      Glue-backed schema tree (databases -> tables -> columns and partition
+      keys) with "Query this table", the real StartQueryExecution /
+      GetQueryExecution / GetQueryResults / StopQueryExecution lifecycle with
+      backed-off polling, a results table paged by the service's own NextToken,
+      bytes scanned and timings, and per-endpoint query history and saved
+      queries in browser storage. Failures are classified: an unsupported
+      construct renders as a first-class explanation naming the construct and
+      linking to glaux's SQL coverage docs, everything else as an ordinary
+      error. Deep screens now mount through src/deep/registry.tsx, ready for
+      glue and firehose.
     notes: >
       The flagship screen. Ace CodeEditor, Glue-backed schema tree, run/cancel,
       results table with pagination, bytes scanned + timing, query history, saved
