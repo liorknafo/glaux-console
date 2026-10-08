@@ -4,8 +4,9 @@
  *
  * This is NOT a model of how glaux or fakecloud behave. It answers only what the
  * console's own contract depends on: `GET /_fakecloud/health` for capability
- * discovery, and the SQS, Glue and Athena JSON protocols, so a request goes all
- * the way through the console backend and back into the screen. Every response
+ * discovery, the SQS, Glue, Athena and Firehose JSON protocols, and enough of
+ * S3's rest-xml protocol to browse a bucket, so a request goes all the way
+ * through the console backend and back into the screen. Every response
  * shape below comes from the published AWS service model, and the one piece of
  * behaviour that is invented — which query "fails" — is invented here in the
  * fixture, not assumed of any emulator. The spec's real end-to-end target, an
@@ -39,6 +40,69 @@ const GLUE_TABLE = {
   PartitionKeys: [{ Name: 'dt', Type: 'string' }],
 };
 
+/**
+ * An in-memory S3. `${bucket}/${key}` -> the object.
+ *
+ * Seeded with two objects the Firehose stream has "already delivered", so the
+ * delivery monitor has something to read on open.
+ */
+const objects = new Map([
+  [
+    'lake/orders/2026/08/24/orders-1.json.gz',
+    { body: Buffer.from('{"order_id":"A-1"}\n'), contentType: 'application/json' },
+  ],
+  [
+    'lake/orders/2026/08/24/orders-2.json.gz',
+    { body: Buffer.from('{"order_id":"A-2"}\n'), contentType: 'application/json' },
+  ],
+]);
+
+const DELIVERY_STREAM = {
+  DeliveryStreamName: 'orders-to-lake',
+  DeliveryStreamARN: 'arn:aws:firehose:us-east-1:000000000000:deliverystream/orders-to-lake',
+  DeliveryStreamStatus: 'ACTIVE',
+  DeliveryStreamType: 'DirectPut',
+  VersionId: '1',
+  CreateTimestamp: 1756000000,
+  Destinations: [
+    {
+      DestinationId: 'destinationId-000000000001',
+      ExtendedS3DestinationDescription: {
+        RoleARN: 'arn:aws:iam::000000000000:role/firehose',
+        BucketARN: 'arn:aws:s3:::lake',
+        Prefix: 'orders/!{timestamp:yyyy/MM/dd}/',
+        ErrorOutputPrefix: 'errors/!{firehose:error-output-type}/',
+        BufferingHints: { SizeInMBs: 5, IntervalInSeconds: 60 },
+        CompressionFormat: 'UNCOMPRESSED',
+      },
+    },
+  ],
+};
+
+let deliveredCount = 2;
+
+function escapeXml(value) {
+  return String(value).replace(
+    /[<>&"']/g,
+    character =>
+      ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' })[character],
+  );
+}
+
+function sendXml(res, status, xml) {
+  res.statusCode = status;
+  res.setHeader('content-type', 'application/xml');
+  res.end(`<?xml version="1.0" encoding="UTF-8"?>${xml}`);
+}
+
+function s3Error(res, status, code, message) {
+  sendXml(
+    res,
+    status,
+    `<Error><Code>${code}</Code><Message>${escapeXml(message)}</Message></Error>`,
+  );
+}
+
 function send(res, status, body, contentType = 'application/x-amz-json-1.0') {
   const payload = JSON.stringify(body);
   res.statusCode = status;
@@ -48,6 +112,139 @@ function send(res, status, body, contentType = 'application/x-amz-json-1.0') {
 
 const JSON_1_1 = 'application/x-amz-json-1.1';
 
+/**
+ * Enough of S3's rest-xml protocol to browse a bucket: ListBuckets,
+ * ListObjectsV2 with a delimiter, and the four object operations. Every
+ * document below is the shape the published S3 model declares.
+ */
+function handleS3(req, res, raw) {
+  const url = new URL(req.url ?? '/', 'http://fixture.local');
+  const segments = url.pathname.split('/').filter(segment => segment !== '');
+  const method = req.method ?? 'GET';
+
+  if (segments.length === 0) {
+    if (method !== 'GET') {
+      s3Error(res, 405, 'MethodNotAllowed', `${method} is not allowed on the service root.`);
+      return;
+    }
+    sendXml(
+      res,
+      200,
+      '<ListAllMyBucketsResult><Buckets>' +
+        '<Bucket><Name>lake</Name><CreationDate>2026-08-01T00:00:00.000Z</CreationDate></Bucket>' +
+        '</Buckets></ListAllMyBucketsResult>',
+    );
+    return;
+  }
+
+  const bucket = decodeURIComponent(segments[0]);
+  const key = segments
+    .slice(1)
+    .map(segment => decodeURIComponent(segment))
+    .join('/');
+
+  if (bucket !== 'lake') {
+    s3Error(res, 404, 'NoSuchBucket', `The bucket "${bucket}" does not exist.`);
+    return;
+  }
+
+  if (key === '' && method === 'GET') {
+    listObjects(res, bucket, url);
+    return;
+  }
+
+  const stored = objects.get(`${bucket}/${key}`);
+
+  switch (method) {
+    case 'PUT':
+      objects.set(`${bucket}/${key}`, {
+        body: raw,
+        contentType: req.headers['content-type'] ?? 'application/octet-stream',
+      });
+      res.statusCode = 200;
+      res.setHeader('etag', `"${raw.length.toString(16)}"`);
+      res.end();
+      return;
+    case 'DELETE':
+      objects.delete(`${bucket}/${key}`);
+      res.statusCode = 204;
+      res.end();
+      return;
+    case 'HEAD':
+      if (!stored) {
+        res.statusCode = 404;
+        res.end();
+        return;
+      }
+      res.statusCode = 200;
+      res.setHeader('content-type', stored.contentType);
+      res.setHeader('content-length', String(stored.body.length));
+      res.setHeader('etag', `"${stored.body.length.toString(16)}"`);
+      res.setHeader('last-modified', new Date(0).toUTCString());
+      res.setHeader('x-amz-meta-written-by', 'e2e-fixture');
+      res.end();
+      return;
+    case 'GET':
+      if (!stored) {
+        s3Error(res, 404, 'NoSuchKey', `The key "${key}" does not exist.`);
+        return;
+      }
+      res.statusCode = 200;
+      res.setHeader('content-type', stored.contentType);
+      res.end(stored.body);
+      return;
+    default:
+      s3Error(res, 405, 'MethodNotAllowed', `${method} is not allowed on an object.`);
+  }
+}
+
+function listObjects(res, bucket, url) {
+  const prefix = url.searchParams.get('prefix') ?? '';
+  const delimiter = url.searchParams.get('delimiter') ?? '';
+  const keys = [...objects.keys()]
+    .filter(entry => entry.startsWith(`${bucket}/`))
+    .map(entry => entry.slice(bucket.length + 1))
+    .filter(entry => entry.startsWith(prefix))
+    .sort();
+
+  const commonPrefixes = new Set();
+  const contents = [];
+  for (const entry of keys) {
+    const rest = entry.slice(prefix.length);
+    const boundary = delimiter ? rest.indexOf(delimiter) : -1;
+    if (boundary === -1) contents.push(entry);
+    else commonPrefixes.add(`${prefix}${rest.slice(0, boundary + delimiter.length)}`);
+  }
+
+  sendXml(
+    res,
+    200,
+    '<ListBucketResult>' +
+      `<Name>${escapeXml(bucket)}</Name>` +
+      `<Prefix>${escapeXml(prefix)}</Prefix>` +
+      '<IsTruncated>false</IsTruncated>' +
+      `<KeyCount>${contents.length}</KeyCount>` +
+      [...commonPrefixes]
+        .map(entry => `<CommonPrefixes><Prefix>${escapeXml(entry)}</Prefix></CommonPrefixes>`)
+        .join('') +
+      contents
+        .map(entry => {
+          const stored = objects.get(`${bucket}/${entry}`);
+          return (
+            '<Contents>' +
+            `<Key>${escapeXml(entry)}</Key>` +
+            '<LastModified>2026-08-24T09:00:00.000Z</LastModified>' +
+            `<ETag>&quot;${stored.body.length.toString(16)}&quot;</ETag>` +
+            `<Size>${stored.body.length}</Size>` +
+            '<StorageClass>STANDARD</StorageClass>' +
+            '</Contents>'
+          );
+        })
+        .join('') +
+      '</ListBucketResult>',
+  );
+}
+
 createServer((req, res) => {
   if (req.url === '/_fakecloud/health') {
     res.statusCode = 200;
@@ -56,25 +253,33 @@ createServer((req, res) => {
       JSON.stringify({
         status: 'ok',
         version: 'e2e-fixture',
-        services: ['sqs', 'glue', 'athena'],
+        services: ['sqs', 'glue', 'athena', 's3', 'firehose'],
       }),
     );
     return;
   }
 
-  let body = '';
-  req.on('data', chunk => {
-    body += chunk;
-  });
+  // Buffered rather than concatenated as text: an S3 upload is bytes, and
+  // string concatenation would corrupt them.
+  const chunks = [];
+  req.on('data', chunk => chunks.push(chunk));
   req.on('end', () => {
+    const raw = Buffer.concat(chunks);
     const target = req.headers['x-amz-target'] ?? '';
-    const input = body ? JSON.parse(body) : {};
 
     // The console must have signed the request before it reached us.
     if (!String(req.headers.authorization ?? '').startsWith('AWS4-HMAC-SHA256 ')) {
       send(res, 400, { __type: 'MissingAuthenticationToken', message: 'No SigV4 signature' });
       return;
     }
+
+    // S3 is rest-xml: it routes on method and path, and carries no target header.
+    if (!target) {
+      handleS3(req, res, raw);
+      return;
+    }
+
+    const input = raw.length ? JSON.parse(raw.toString('utf8')) : {};
 
     switch (target) {
       case 'AmazonSQS.ListQueues':
@@ -174,6 +379,38 @@ createServer((req, res) => {
       case 'AmazonAthena.StopQueryExecution':
         send(res, 200, {}, JSON_1_1);
         return;
+
+      case 'Firehose_20150804.ListDeliveryStreams':
+        send(res, 200, { DeliveryStreamNames: ['orders-to-lake'], HasMoreDeliveryStreams: false }, JSON_1_1); // prettier-ignore
+        return;
+      case 'Firehose_20150804.DescribeDeliveryStream':
+        if (input.DeliveryStreamName !== DELIVERY_STREAM.DeliveryStreamName) {
+          send(res, 400, { __type: 'ResourceNotFoundException', message: 'No such stream' }, JSON_1_1); // prettier-ignore
+          return;
+        }
+        send(res, 200, { DeliveryStreamDescription: DELIVERY_STREAM }, JSON_1_1);
+        return;
+      case 'Firehose_20150804.PutRecordBatch': {
+        // The fixture's own rule, not an emulator's: a put lands as an object
+        // under the stream's prefix straight away, so the end-to-end test can
+        // watch a record become a delivered object without waiting on a buffer.
+        const records = input.Records ?? [];
+        deliveredCount += 1;
+        objects.set(`lake/orders/2026/08/24/orders-${deliveredCount}.json.gz`, {
+          body: Buffer.concat(records.map(record => Buffer.from(record.Data, 'base64'))),
+          contentType: 'application/json',
+        });
+        send(
+          res,
+          200,
+          {
+            FailedPutCount: 0,
+            RequestResponses: records.map((_record, index) => ({ RecordId: `r-${index + 1}` })),
+          },
+          JSON_1_1,
+        );
+        return;
+      }
 
       default:
         send(res, 400, {
