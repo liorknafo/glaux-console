@@ -4,10 +4,12 @@ const FIXTURE = 'http://127.0.0.1:4610';
 
 /**
  * End-to-end through the real stack: production build, standalone console
- * backend, SigV4 signing, a target over HTTP.
+ * backend, SigV4 signing, a target over HTTP, and — for the Athena tests below —
+ * the real Ace editor in a real browser.
  *
- * The spec's full end-to-end scenario (Glue table -> Athena query -> results and
- * bytes scanned) needs a real glaux binary and lands with the Athena entry.
+ * The target is the fixture in `e2e/fixtures/`, not glaux: the spec's scenario
+ * against an all-in-one glaux binary still needs that binary in CI. What is
+ * covered here is the console's own half of it, which is what this repo owns.
  */
 
 test.beforeEach(async ({ page }) => {
@@ -46,7 +48,7 @@ test('discovers capabilities and lists queues through the console backend', asyn
   await useFixtureEndpoint(page);
 
   await page.goto('/#/');
-  await expect(page.getByTestId('target-status')).toContainText('1 services running');
+  await expect(page.getByTestId('target-status')).toContainText('3 services running');
   await expect(page.getByTestId('target-status')).toContainText('e2e-fixture');
 
   await page.getByTestId('service-card-sqs').getByText('SQS').click();
@@ -84,4 +86,54 @@ test('surfaces the target’s own error', async ({ page }) => {
 
   await expect(page.getByTestId('resources-error')).toContainText('QueueDoesNotExist');
   await expect(page.getByTestId('resources-error')).toContainText('does not exist');
+});
+
+test('runs a query from the schema tree and reports results and bytes scanned', async ({
+  page,
+}) => {
+  await useFixtureEndpoint(page);
+  await page.goto('/#/service/athena');
+
+  // The schema tree is Glue-backed: expand the database, then the table. The
+  // names are matched case-sensitively so they cannot pick up the navigation's
+  // own "Analytics" category heading.
+  await page.getByRole('button', { name: /^analytics$/ }).click();
+  await page.getByRole('button', { name: /^orders$/ }).click();
+  await page.getByTestId('query-table-orders').click();
+
+  await page.getByTestId('run-query').click();
+
+  await expect(page.getByTestId('query-state')).toContainText('SUCCEEDED');
+  await expect(page.getByTestId('bytes-scanned')).toContainText('4.00 KB');
+  await expect(page.getByTestId('engine-time')).toContainText('42 ms');
+
+  const results = page.getByTestId('query-results');
+  await expect(results).toContainText('A-1');
+  await expect(results).toContainText('7.25');
+
+  await expect(page.getByTestId('query-history')).toContainText('FROM "analytics"."orders"');
+});
+
+test('explains an unsupported SQL construct instead of a bare error', async ({ page }) => {
+  await useFixtureEndpoint(page);
+  await page.goto('/#/service/athena');
+
+  // Typed into the real Ace editor, not injected into React state.
+  const editor = page.locator('.ace_content');
+  await expect(editor).toBeVisible();
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  // Typed with a delay: ace's own key handling drops characters typed faster
+  // than a person can type them.
+  await page.keyboard.type('SELECT dt FROM "analytics"."orders" GROUP BY GROUPING SETS ((dt));', {
+    delay: 20,
+  });
+
+  await page.getByTestId('run-query').click();
+
+  const explanation = page.getByTestId('unsupported-construct');
+  await expect(explanation).toContainText('GROUPING SETS');
+  await expect(explanation.getByRole('link')).toHaveAttribute('href', /glaux/);
+  await expect(page.getByTestId('query-results')).toHaveCount(0);
+  await expect(page.getByTestId('query-history')).toContainText('UNSUPPORTED');
 });
