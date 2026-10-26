@@ -5,7 +5,7 @@ import Header from '@cloudscape-design/components/header';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Table from '@cloudscape-design/components/table';
 import { formatRanAt, summarize } from './format';
-import { formatBytes, formatDuration } from './results';
+import { formatBytes, formatDuration } from '../format';
 import type { HistoryEntry, SavedQuery } from './store';
 
 export function HistoryPanel({

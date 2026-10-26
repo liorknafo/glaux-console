@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatBytes, formatDuration, isHeaderRow, readColumns, readResultPage } from './results';
+import { isHeaderRow, readColumns, readResultPage } from './results';
 
 const SELECT_PAGE = {
   ResultSet: {
@@ -79,22 +79,5 @@ describe('readResultPage', () => {
     expect(isHeaderRow(['Alias A'], columns)).toBe(true);
     expect(isHeaderRow(['a'], columns)).toBe(true);
     expect(isHeaderRow(['value'], columns)).toBe(false);
-  });
-});
-
-describe('formatting', () => {
-  it('formats bytes scanned the way the console does', () => {
-    expect(formatBytes(0)).toBe('0 B');
-    expect(formatBytes(512)).toBe('512 B');
-    expect(formatBytes(2048)).toBe('2.00 KB');
-    expect(formatBytes(15 * 1024 * 1024)).toBe('15.0 MB');
-    expect(formatBytes(undefined)).toBe('—');
-  });
-
-  it('formats durations', () => {
-    expect(formatDuration(320)).toBe('320 ms');
-    expect(formatDuration(1500)).toBe('1.50 s');
-    expect(formatDuration(90_000)).toBe('1 min 30.0 s');
-    expect(formatDuration(undefined)).toBe('—');
   });
 });
