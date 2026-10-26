@@ -82,6 +82,8 @@ describe('Resources tab', () => {
     window.location.hash = '#/service/sqs';
     render(<App />);
 
+    // SQS opens on its hand-built queue screen; the generated tabs sit behind it.
+    await user.click(await screen.findByRole('tab', { name: 'Resources' }));
     await chooseOption(user, 'Read operation', 'ListQueues');
     await user.click(await screen.findByTestId('run-read-operation'));
 
