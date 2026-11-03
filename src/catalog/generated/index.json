@@ -1,0 +1,532 @@
+[
+  {
+    "id": "account",
+    "label": "Account",
+    "category": "Security & identity",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "account",
+    "operations": 16
+  },
+  {
+    "id": "acm",
+    "label": "Certificate Manager",
+    "category": "Security & identity",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "acm",
+    "operations": 40
+  },
+  {
+    "id": "apigateway",
+    "label": "API Gateway",
+    "category": "Application integration",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "apigateway",
+    "operations": 124
+  },
+  {
+    "id": "apigatewayv2",
+    "label": "API Gateway v2",
+    "category": "Application integration",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "apigateway",
+    "operations": 103
+  },
+  {
+    "id": "appsync",
+    "label": "AppSync",
+    "category": "Application integration",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "appsync",
+    "operations": 74
+  },
+  {
+    "id": "athena",
+    "label": "Athena",
+    "category": "Analytics",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "athena",
+    "operations": 70
+  },
+  {
+    "id": "backup",
+    "label": "Backup",
+    "category": "Storage",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "backup",
+    "operations": 115
+  },
+  {
+    "id": "batch",
+    "label": "Batch",
+    "category": "Compute",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "batch",
+    "operations": 45
+  },
+  {
+    "id": "cloudformation",
+    "label": "CloudFormation",
+    "category": "Management & governance",
+    "aliases": [],
+    "protocol": "query",
+    "endpointPrefix": "cloudformation",
+    "operations": 90
+  },
+  {
+    "id": "cloudfront",
+    "label": "CloudFront",
+    "category": "Networking",
+    "aliases": [],
+    "protocol": "rest-xml",
+    "endpointPrefix": "cloudfront",
+    "operations": 167
+  },
+  {
+    "id": "cloudtrail",
+    "label": "CloudTrail",
+    "category": "Management & governance",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "cloudtrail",
+    "operations": 60
+  },
+  {
+    "id": "cloudwatch",
+    "label": "CloudWatch",
+    "category": "Management & governance",
+    "aliases": [
+      "monitoring"
+    ],
+    "protocol": "smithy-rpc-v2-cbor",
+    "endpointPrefix": "monitoring",
+    "operations": 50
+  },
+  {
+    "id": "cognito-identity",
+    "label": "Cognito Identity",
+    "category": "Security & identity",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "cognito-identity",
+    "operations": 23
+  },
+  {
+    "id": "cognito-idp",
+    "label": "Cognito User Pools",
+    "category": "Security & identity",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "cognito-idp",
+    "operations": 129
+  },
+  {
+    "id": "config",
+    "label": "Config",
+    "category": "Management & governance",
+    "aliases": [
+      "configservice"
+    ],
+    "protocol": "json",
+    "endpointPrefix": "config",
+    "operations": 102
+  },
+  {
+    "id": "dynamodb",
+    "label": "DynamoDB",
+    "category": "Database",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "dynamodb",
+    "operations": 58
+  },
+  {
+    "id": "dynamodbstreams",
+    "label": "DynamoDB Streams",
+    "category": "Database",
+    "aliases": [
+      "streams.dynamodb"
+    ],
+    "protocol": "json",
+    "endpointPrefix": "streams.dynamodb",
+    "operations": 4
+  },
+  {
+    "id": "ec2",
+    "label": "EC2",
+    "category": "Compute",
+    "aliases": [],
+    "protocol": "ec2",
+    "endpointPrefix": "ec2",
+    "operations": 800
+  },
+  {
+    "id": "ecr",
+    "label": "ECR",
+    "category": "Containers",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "api.ecr",
+    "operations": 58
+  },
+  {
+    "id": "ecs",
+    "label": "ECS",
+    "category": "Containers",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "ecs",
+    "operations": 77
+  },
+  {
+    "id": "efs",
+    "label": "EFS",
+    "category": "Storage",
+    "aliases": [
+      "elasticfilesystem"
+    ],
+    "protocol": "rest-json",
+    "endpointPrefix": "elasticfilesystem",
+    "operations": 31
+  },
+  {
+    "id": "eks",
+    "label": "EKS",
+    "category": "Containers",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "eks",
+    "operations": 70
+  },
+  {
+    "id": "elasticache",
+    "label": "ElastiCache",
+    "category": "Database",
+    "aliases": [],
+    "protocol": "query",
+    "endpointPrefix": "elasticache",
+    "operations": 75
+  },
+  {
+    "id": "elbv2",
+    "label": "Elastic Load Balancing v2",
+    "category": "Networking",
+    "aliases": [
+      "elasticloadbalancingv2",
+      "elasticloadbalancing"
+    ],
+    "protocol": "query",
+    "endpointPrefix": "elasticloadbalancing",
+    "operations": 51
+  },
+  {
+    "id": "emr",
+    "label": "EMR",
+    "category": "Analytics",
+    "aliases": [
+      "elasticmapreduce"
+    ],
+    "protocol": "json",
+    "endpointPrefix": "elasticmapreduce",
+    "operations": 65
+  },
+  {
+    "id": "es",
+    "label": "Elasticsearch Service",
+    "category": "Analytics",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "es",
+    "operations": 51
+  },
+  {
+    "id": "events",
+    "label": "EventBridge",
+    "category": "Application integration",
+    "aliases": [
+      "eventbridge",
+      "cloudwatch-events"
+    ],
+    "protocol": "json",
+    "endpointPrefix": "events",
+    "operations": 57
+  },
+  {
+    "id": "firehose",
+    "label": "Data Firehose",
+    "category": "Analytics",
+    "aliases": [
+      "kinesisfirehose",
+      "kinesis-firehose"
+    ],
+    "protocol": "json",
+    "endpointPrefix": "firehose",
+    "operations": 12
+  },
+  {
+    "id": "glue",
+    "label": "Glue",
+    "category": "Analytics",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "glue",
+    "operations": 299
+  },
+  {
+    "id": "iam",
+    "label": "IAM",
+    "category": "Security & identity",
+    "aliases": [],
+    "protocol": "query",
+    "endpointPrefix": "iam",
+    "operations": 180
+  },
+  {
+    "id": "kinesis",
+    "label": "Kinesis",
+    "category": "Analytics",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "kinesis",
+    "operations": 39
+  },
+  {
+    "id": "kms",
+    "label": "KMS",
+    "category": "Security & identity",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "kms",
+    "operations": 54
+  },
+  {
+    "id": "lambda",
+    "label": "Lambda",
+    "category": "Compute",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "lambda",
+    "operations": 88
+  },
+  {
+    "id": "logs",
+    "label": "CloudWatch Logs",
+    "category": "Management & governance",
+    "aliases": [
+      "cloudwatch-logs"
+    ],
+    "protocol": "json",
+    "endpointPrefix": "logs",
+    "operations": 118
+  },
+  {
+    "id": "mq",
+    "label": "Amazon MQ",
+    "category": "Application integration",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "mq",
+    "operations": 25
+  },
+  {
+    "id": "opensearch",
+    "label": "OpenSearch Service",
+    "category": "Analytics",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "es",
+    "operations": 96
+  },
+  {
+    "id": "organizations",
+    "label": "Organizations",
+    "category": "Security & identity",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "organizations",
+    "operations": 63
+  },
+  {
+    "id": "rds",
+    "label": "RDS",
+    "category": "Database",
+    "aliases": [],
+    "protocol": "query",
+    "endpointPrefix": "rds",
+    "operations": 164
+  },
+  {
+    "id": "redshift",
+    "label": "Redshift",
+    "category": "Analytics",
+    "aliases": [],
+    "protocol": "query",
+    "endpointPrefix": "redshift",
+    "operations": 145
+  },
+  {
+    "id": "redshift-data",
+    "label": "Redshift Data API",
+    "category": "Analytics",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "redshift-data",
+    "operations": 12
+  },
+  {
+    "id": "resourcegroupstaggingapi",
+    "label": "Resource Groups Tagging",
+    "category": "Management & governance",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "tagging",
+    "operations": 9
+  },
+  {
+    "id": "route53",
+    "label": "Route 53",
+    "category": "Networking",
+    "aliases": [],
+    "protocol": "rest-xml",
+    "endpointPrefix": "route53",
+    "operations": 71
+  },
+  {
+    "id": "s3",
+    "label": "S3",
+    "category": "Storage",
+    "aliases": [],
+    "protocol": "rest-xml",
+    "endpointPrefix": "s3",
+    "operations": 116
+  },
+  {
+    "id": "scheduler",
+    "label": "EventBridge Scheduler",
+    "category": "Application integration",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "scheduler",
+    "operations": 12
+  },
+  {
+    "id": "secretsmanager",
+    "label": "Secrets Manager",
+    "category": "Security & identity",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "secretsmanager",
+    "operations": 23
+  },
+  {
+    "id": "servicediscovery",
+    "label": "Cloud Map",
+    "category": "Networking",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "servicediscovery",
+    "operations": 30
+  },
+  {
+    "id": "ses",
+    "label": "SES",
+    "category": "Business applications",
+    "aliases": [
+      "email"
+    ],
+    "protocol": "query",
+    "endpointPrefix": "email",
+    "operations": 71
+  },
+  {
+    "id": "sesv2",
+    "label": "SES v2",
+    "category": "Business applications",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "email",
+    "operations": 112
+  },
+  {
+    "id": "sns",
+    "label": "SNS",
+    "category": "Application integration",
+    "aliases": [],
+    "protocol": "query",
+    "endpointPrefix": "sns",
+    "operations": 42
+  },
+  {
+    "id": "sqs",
+    "label": "SQS",
+    "category": "Application integration",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "sqs",
+    "operations": 23
+  },
+  {
+    "id": "ssm",
+    "label": "Systems Manager",
+    "category": "Management & governance",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "ssm",
+    "operations": 152
+  },
+  {
+    "id": "stepfunctions",
+    "label": "Step Functions",
+    "category": "Application integration",
+    "aliases": [
+      "states",
+      "sfn"
+    ],
+    "protocol": "json",
+    "endpointPrefix": "states",
+    "operations": 37
+  },
+  {
+    "id": "sts",
+    "label": "STS",
+    "category": "Security & identity",
+    "aliases": [],
+    "protocol": "query",
+    "endpointPrefix": "sts",
+    "operations": 11
+  },
+  {
+    "id": "swf",
+    "label": "Simple Workflow",
+    "category": "Application integration",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "swf",
+    "operations": 39
+  },
+  {
+    "id": "timestream-write",
+    "label": "Timestream Write",
+    "category": "Analytics",
+    "aliases": [],
+    "protocol": "json",
+    "endpointPrefix": "ingest.timestream",
+    "operations": 19
+  },
+  {
+    "id": "xray",
+    "label": "X-Ray",
+    "category": "Management & governance",
+    "aliases": [],
+    "protocol": "rest-json",
+    "endpointPrefix": "xray",
+    "operations": 38
+  }
+]
