@@ -52,6 +52,8 @@ test('discovers capabilities and lists queues through the console backend', asyn
   await expect(page.getByTestId('target-status')).toContainText('e2e-fixture');
 
   await page.getByTestId('service-card-sqs').getByText('SQS').click();
+  // SQS opens on its hand-built queue screen; the generated tabs sit behind it.
+  await page.getByRole('tab', { name: 'Resources' }).click();
   await chooseOperation(page, 'Read operation', 'ListQueues');
   await page.getByTestId('run-read-operation').click();
 
@@ -80,6 +82,7 @@ test('surfaces the target’s own error', async ({ page }) => {
   await useFixtureEndpoint(page);
   await page.goto('/#/service/sqs');
 
+  await page.getByRole('tab', { name: 'Resources' }).click();
   await chooseOperation(page, 'Read operation', 'GetQueueUrl');
   await page.getByLabel('Queue name').fill('missing-queue');
   await page.getByTestId('run-read-operation').click();
@@ -219,4 +222,42 @@ test('opens the Athena editor from a Glue table', async ({ page }) => {
   await expect(page.locator('.ace_content')).toContainText('FROM "analytics"."orders"');
   await page.getByTestId('run-query').click();
   await expect(page.getByTestId('query-state')).toContainText('SUCCEEDED');
+});
+
+test('sends a message and peeks it back without consuming it', async ({ page }) => {
+  await useFixtureEndpoint(page);
+  await page.goto('/#/service/sqs');
+
+  await page.getByTestId('open-queue-orders').click();
+  await expect(page.getByTestId('queue-detail')).toContainText(
+    'arn:aws:sqs:us-east-1:000000000000:orders',
+  );
+
+  await page.getByRole('tab', { name: 'Send message' }).click();
+  await page.getByTestId('message-body-input').getByRole('textbox').fill('{"order_id":"e2e-1"}');
+  await page.getByTestId('send-message').click();
+  await expect(page.getByTestId('send-result')).toContainText('Message ID');
+
+  await page.getByRole('tab', { name: 'Messages' }).click();
+  await page.getByTestId('poll-messages').click();
+  await expect(page.getByTestId('message-table')).toContainText('e2e-1');
+
+  // The point of the peek: a second poll finds the same message still there,
+  // and its receive count has moved rather than the message disappearing.
+  await page.getByTestId('poll-messages').click();
+  await expect(page.getByTestId('message-table')).toContainText('e2e-1');
+  await expect(page.getByTestId('message-table')).toContainText('2');
+});
+
+test('shows the redrive policy of a queue that has one', async ({ page }) => {
+  await useFixtureEndpoint(page);
+  await page.goto('/#/service/sqs');
+
+  await page.getByTestId('open-queue-orders').click();
+  await page.getByRole('tab', { name: 'Dead-letter queue' }).click();
+
+  await expect(page.getByTestId('max-receive-count')).toContainText('5');
+  // The target ARN resolves to a queue that is actually on this endpoint.
+  await page.getByTestId('open-dead-letter-target').click();
+  await expect(page.getByTestId('queue-detail')).toContainText('events');
 });
