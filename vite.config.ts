@@ -36,5 +36,11 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}', 'server/**/*.test.mjs'],
     css: false,
+    // The integration tests drive the whole shell through userEvent in jsdom,
+    // which costs seconds per test — several already run past half of vitest's
+    // 5 s default on a CI runner. The budget is the runner's speed, not the
+    // assertions, so it is set where a genuinely stuck test still fails fast.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
   },
 });

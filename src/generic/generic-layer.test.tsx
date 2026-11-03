@@ -122,6 +122,8 @@ describe('Resources tab', () => {
     window.location.hash = '#/service/athena';
     render(<App />);
 
+    // Athena opens on its hand-built query editor; the generated tabs sit behind it.
+    await user.click(await screen.findByRole('tab', { name: 'Resources' }));
     await chooseOption(user, 'Read operation', 'ListDataCatalogs');
     await user.click(await screen.findByTestId('run-read-operation'));
 
@@ -148,6 +150,8 @@ describe('Resources tab', () => {
     window.location.hash = '#/service/athena';
     render(<App />);
 
+    // Athena opens on its hand-built query editor; the generated tabs sit behind it.
+    await user.click(await screen.findByRole('tab', { name: 'Resources' }));
     await chooseOption(user, 'Read operation', 'ListDataCatalogs');
     await user.click(await screen.findByTestId('run-read-operation'));
 
