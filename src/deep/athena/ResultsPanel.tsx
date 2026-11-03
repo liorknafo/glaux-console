@@ -9,7 +9,7 @@ import StatusIndicator, {
   type StatusIndicatorProps,
 } from '@cloudscape-design/components/status-indicator';
 import Table from '@cloudscape-design/components/table';
-import { formatBytes, formatDuration } from './results';
+import { formatBytes, formatDuration } from '../format';
 import type { QueryExecutionSnapshot, QueryState, ResultPage } from './types';
 
 /**

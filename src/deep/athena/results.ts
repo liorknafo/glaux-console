@@ -57,27 +57,3 @@ export function readResultPage(output: unknown, firstPage: boolean): ResultPage 
   const updateCount = typeof record?.UpdateCount === 'number' ? record.UpdateCount : undefined;
   return { columns, rows: body, nextToken: asString(record?.NextToken) || undefined, updateCount };
 }
-
-const UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-
-/** Bytes scanned, in the console's own units. */
-export function formatBytes(bytes: number | undefined): string {
-  if (bytes === undefined || !Number.isFinite(bytes)) return '—';
-  if (bytes < 1024) return `${bytes} B`;
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < UNITS.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  return `${value.toFixed(value < 10 ? 2 : 1)} ${UNITS[unit]}`;
-}
-
-export function formatDuration(millis: number | undefined): string {
-  if (millis === undefined || !Number.isFinite(millis)) return '—';
-  if (millis < 1000) return `${Math.round(millis)} ms`;
-  const seconds = millis / 1000;
-  if (seconds < 60) return `${seconds.toFixed(2)} s`;
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes} min ${(seconds - minutes * 60).toFixed(1)} s`;
-}
